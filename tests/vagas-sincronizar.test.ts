@@ -88,6 +88,40 @@ describe("sincronizarVagas", () => {
     expect(await db.vaga.count({ where: { origem: "falsa" } })).toBe(1);
   });
 
+  it("não salva de novo a vaga (mesmo cargo e empresa) que uma fonte anterior já trouxe", async () => {
+    const daFonte = (origem: string, rotulo: string, vagas: VagaExterna[]): FonteExterna => ({
+      origem,
+      rotulo,
+      indisponivel: () => null,
+      buscar: async () => vagas,
+    });
+    const v = (origem: string, id: string, titulo: string, empresa: string): VagaExterna => ({
+      ...vaga(id, titulo, "Python e SQL"),
+      origem,
+      empresa,
+    });
+
+    const [primeira, segunda] = await sincronizarVagas(db, [
+      daFonte("primeira", "Primeira", [v("primeira", "a1", "Estágio em Dados", "Beta S.A."), v("primeira", "a2", "Dev Python Júnior", "Gama")]),
+      daFonte("segunda", "Segunda", [
+        v("segunda", "b1", "ESTÁGIO EM DADOS", "Beta S.A."), // repetida (acentos e maiúsculas não importam)
+        v("segunda", "b2", "Dev Python Júnior", "Outra Empresa"), // mesmo cargo, empresa diferente: é outra vaga
+      ]),
+    ]);
+
+    expect(primeira).toMatchObject({ salvas: 2, repetidas: 0 });
+    expect(segunda).toMatchObject({ salvas: 1, repetidas: 1 });
+    expect((await db.vaga.findMany({ where: { origem: "segunda" } })).map((x) => x.idExterno)).toEqual(["b2"]);
+
+    // Rodar de novo não faz a primeira fonte perder a vaga para a segunda.
+    await sincronizarVagas(db, [
+      daFonte("primeira", "Primeira", [v("primeira", "a1", "Estágio em Dados", "Beta S.A."), v("primeira", "a2", "Dev Python Júnior", "Gama")]),
+      daFonte("segunda", "Segunda", [v("segunda", "b1", "ESTÁGIO EM DADOS", "Beta S.A."), v("segunda", "b2", "Dev Python Júnior", "Outra Empresa")]),
+    ]);
+    expect(await db.vaga.count({ where: { origem: "primeira" } })).toBe(2);
+    expect(await db.vaga.count({ where: { origem: "segunda" } })).toBe(1);
+  });
+
   it("pula fonte indisponível e registra erro sem derrubar as outras", async () => {
     const resultados = await sincronizarVagas(db, [
       fonte(() => [], { rotulo: "Sem chave", indisponivel: () => "defina a chave" }),

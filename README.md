@@ -38,6 +38,7 @@ ele busca vagas reais, guarda no banco e **esconde as de exemplo** assim que hou
 
 | Fonte | Precisa de chave? | O que traz |
 | --- | --- | --- |
+| **Gupy** | Não | A maior plataforma de recrutamento do Brasil, com muito estágio e trainee. **Não é API oficial**: usa o mesmo endereço da busca do site `portal.gupy.io` (o `robots.txt` permite). Traz a descrição completa da vaga, então a leitura de requisitos é bem melhor. Em outubro/2026: 282 recebidas, 128 aproveitadas |
 | **Adzuna** | Sim (gratuita) | Vagas do Brasil de vários sites. É a fonte principal; testada com dados reais (227 vagas recebidas, 178 aproveitadas numa execução) |
 | **Jooble** | Sim (gratuita) | Funciona (testado com chave real), mas o índice do Brasil é pequeno e quase só traz vagas sênior de bancos e indústrias: numa execução, 70 recebidas e nenhuma para iniciante de TI. É só um complemento |
 | **Remotive** | Não | Vagas 100% remotas (em inglês) abertas a quem mora no Brasil. A API pública devolve poucas vagas (em outubro/2026: 9 por categoria, nenhuma para iniciantes), então é só um complemento |
@@ -54,6 +55,14 @@ Como conseguir as chaves (depois, cole no arquivo `.env`):
 - **GitHub (opcional):** sem token vale o limite padrão, que basta para uma atualização. Se quiser mais, crie um token
   em https://github.com/settings/tokens (sem marcar nenhuma permissão) e cole em `GITHUB_TOKEN`.
 
+**Sobre a Gupy:** como o endereço é não oficial, ele pode mudar ou ser bloqueado sem aviso. Por isso o volume é pequeno
+(cerca de 40 consultas por execução, com pausa entre elas), o programa se identifica como `techvagas` e cada vaga mostra a
+fonte e leva de volta à página original. Se parar de funcionar, as outras fontes continuam. Ela ignora "banco de
+talentos", vagas com prazo de inscrição vencido e vagas sem prazo com mais de 6 meses.
+
+Quando a mesma vaga (mesmo cargo na mesma empresa) vem de duas fontes, fica só a da fonte que aparece primeiro na lista
+(`src/lib/vagas/fontes/index.ts`: Gupy, Adzuna, Jooble, Remotive, GitHub).
+
 O que o comando faz com cada vaga:
 
 - guarda **só estágio, trainee e júnior** (descarta pleno, sênior, líder etc.);
@@ -62,7 +71,9 @@ O que o comando faz com cada vaga:
 - deduz habilidades básicas pelo cargo (ex.: "Front-end" implica HTML/CSS e JavaScript; "Analista de Dados" implica análise de dados);
 - mantém vagas que claramente são de TI mesmo sem tecnologias no texto (ex.: "Estágio em Tecnologia da Informação"), mas **sem
   requisitos**: o site não calcula compatibilidade nem indica cursos para elas, e avisa isso na tela;
-- descarta vagas que não são de TI (ex.: "Estágio para Direito", "Desenvolvedor de Negócios");
+- descarta vagas que não são de TI (ex.: "Estágio para Direito", "Desenvolvedor de Negócios"). Se o cargo não indica
+  tecnologia, o texto precisa pedir pelo menos duas habilidades técnicas fortes (inglês, suporte, metodologias ágeis e
+  análise de dados sozinhos não bastam);
 - atualiza as que já existem e **remove as que saíram do ar** (nunca mexe nas vagas de outras fontes);
 - só aceita links `http`/`https` e mostra sempre a fonte e o botão para a vaga original.
 

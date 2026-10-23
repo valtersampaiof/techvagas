@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HABILIDADES } from "@/lib/dados/habilidades";
 import { detectarModalidade, detectarTipo, escolherArea, extrairRequisitos, normalizarVaga } from "@/lib/vagas/normalizar";
-import { htmlParaTexto, markdownParaTexto, truncar, urlSegura } from "@/lib/vagas/texto";
+import { espacarFrases, htmlParaTexto, markdownParaTexto, truncar, urlSegura } from "@/lib/vagas/texto";
 import type { VagaExterna } from "@/lib/vagas/tipos";
 
 const vaga = (extra: Partial<VagaExterna>): VagaExterna => ({
@@ -17,6 +17,13 @@ const vaga = (extra: Partial<VagaExterna>): VagaExterna => ({
 });
 
 describe("texto", () => {
+  it("etiquetas dentro da frase não criam espaço antes da pontuação", () => {
+    expect(htmlParaTexto("<p>Usamos <strong>SQL</strong>, <em>Python</em>. Veja <a href=\"https://x.com\">aqui</a>.</p>")).toBe(
+      "Usamos SQL, Python. Veja aqui.",
+    );
+    expect(htmlParaTexto("<p>Linha um</p><p>Linha dois</p>")).toBe("Linha um\nLinha dois");
+  });
+
   it("converte HTML em texto simples e decodifica entidades", () => {
     expect(htmlParaTexto("<p>Vaga &amp; est&#225;gio</p><ul><li>Python</li><li>SQL</li></ul><script>x()</script>")).toBe(
       "Vaga & estágio\n• Python\n• SQL",
@@ -29,6 +36,14 @@ describe("texto", () => {
     expect(t).toContain("• Python");
     expect(t).toContain("• SQL");
     expect(t).not.toMatch(/https|\*\*|comentário|img/);
+  });
+
+  it("separa frases coladas sem quebrar nomes de tecnologias", () => {
+    expect(espacarFrases("diversidade é fundamental.Nessa oportunidade, você fará parte.Buscamos alguém")).toBe(
+      "diversidade é fundamental. Nessa oportunidade, você fará parte. Buscamos alguém",
+    );
+    const intactos = "Experiência com ASP.NET, Asp.NET, Node.js, Vue.js, JavaScript, TypeScript, GitHub, C#.NET e v1.0Beta";
+    expect(espacarFrases(intactos)).toBe(intactos);
   });
 
   it("só aceita links http(s)", () => {
@@ -139,10 +154,42 @@ describe("normalizarVaga", () => {
     expect(n.area).toBe("TI em geral");
   });
 
+  it("reconhece 'Estágio em Dados' como TI, mas não 'Estágio em Dados Cadastrais' sem tecnologia no texto", () => {
+    expect(normalizarVaga(vaga({ titulo: "Estágio em Dados", descricao: "Apoio ao time." }), HABILIDADES)).not.toBeNull();
+    expect(normalizarVaga(vaga({ titulo: "Estágio em Dados Cadastrais", descricao: "Cadastro de clientes no sistema da empresa." }), HABILIDADES)).toBeNull();
+  });
+
   it("não deixa passar vaga que só parece de TI pela palavra 'desenvolvedor'", () => {
     expect(normalizarVaga(vaga({ titulo: "Pessoa Desenvolvedor(a) de Negócios Júnior", descricao: "Vendas e prospecção." }), HABILIDADES)).toBeNull();
     expect(normalizarVaga(vaga({ titulo: "Estágio para Direito", descricao: "Rotinas jurídicas." }), HABILIDADES)).toBeNull();
     expect(normalizarVaga(vaga({ titulo: "Analista Contábil Jr", descricao: "Conciliações contábeis." }), HABILIDADES)).toBeNull();
+  });
+
+  it("rejeita vagas de outras áreas que só citam inglês, suporte ou Excel (casos reais da Gupy)", () => {
+    const rejeitadas: [string, string][] = [
+      ["Estágio em Vendas (Programação e Robótica)", "Atendimento a clientes, suporte aos alunos, pacote Office e inglês avançado."],
+      ["Estágio em Engenharia - Programa de Estágio", "Suporte às áreas de produção. Excel e pacote Office."],
+      ["Analista de Suporte Comercial Júnior", "Suporte ao time de vendas e atendimento ao cliente."],
+      ["PROGRAMA SUMMER JOB 2027", "Inglês fluente. Experiência no exterior."],
+      ["Programa de Estágio", "Apoio administrativo e suporte à gerência. Windows e Office."],
+      ["Programa de Estágio 2026 | Indústria", "Programa para todas as áreas. Benefícios, inteligência artificial como diferencial da empresa e inglês."],
+      ["Analista Suporte ao Cliente Júnior", "Atendimento a clientes da fintech, integrações via API e planilhas."],
+    ];
+    for (const [titulo, descricao] of rejeitadas) {
+      expect(normalizarVaga(vaga({ titulo, descricao }), HABILIDADES), titulo).toBeNull();
+    }
+  });
+
+  it("aceita vagas de TI cujo cargo não diz 'TI' (o texto traz tecnologia forte ou o cargo é de suporte)", () => {
+    const aceitas: [string, string][] = [
+      ["Técnico de Suporte Júnior", "Atendimento de chamados, Windows e redes."],
+      ["Pessoa desenvolvedora Web Júnior", "Trabalhamos com React e Node."],
+      ["Estágio em Engenharia de Dados", "Python, SQL e pipelines de dados."],
+      ["Analista Júnior", "Você vai programar em Python e versionar com Git."],
+    ];
+    for (const [titulo, descricao] of aceitas) {
+      expect(normalizarVaga(vaga({ titulo, descricao }), HABILIDADES), titulo).not.toBeNull();
+    }
   });
 
   it("deduz habilidades básicas pelo cargo (front-end, back-end, analista de dados)", () => {
@@ -168,6 +215,15 @@ describe("normalizarVaga", () => {
     const n = normalizarVaga(vaga({ titulo: "Analista de Suporte Júnior", descricao: "Atendimento de chamados." }), HABILIDADES)!;
     expect(n.requisitos.map((r) => r.slug)).toContain("suporte");
     expect(n.area).toBe("Suporte");
+  });
+
+  it("exibe a descrição com as frases separadas, mas lê as habilidades do texto original", () => {
+    const n = normalizarVaga(
+      vaga({ titulo: "Desenvolvedor Júnior", descricao: "Buscamos pessoas curiosas.Você usará Asp.NET e SQL no dia a dia." }),
+      HABILIDADES,
+    )!;
+    expect(n.descricao).toBe("Buscamos pessoas curiosas. Você usará Asp.NET e SQL no dia a dia.");
+    expect(n.requisitos.map((r) => r.slug)).toEqual(expect.arrayContaining(["csharp", "sql"]));
   });
 
   it("usa 'Brasil' quando a fonte não traz cidade e limita o tamanho da descrição", () => {

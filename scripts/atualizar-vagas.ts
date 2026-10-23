@@ -11,7 +11,7 @@ async function main() {
     const marca = r.situacao === "ok" ? "✔" : r.situacao === "pulada" ? "–" : "✘";
     const resumo =
       r.situacao === "ok"
-        ? `${r.salvas} salvas (${r.recebidas} recebidas, ${r.descartadas} descartadas por não serem para iniciantes ou não pedirem habilidades conhecidas)`
+        ? `${r.salvas} salvas (${r.recebidas} recebidas; ${r.descartadas - (r.repetidas ?? 0)} descartadas por não serem para iniciantes de TI; ${r.repetidas ?? 0} já vieram de outra fonte)`
         : r.situacao === "pulada"
           ? `pulada: ${r.detalhe}`
           : `erro: ${r.detalhe}`;

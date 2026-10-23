@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { HABILIDADES } from "../dados/habilidades";
 import { FONTES } from "./fontes";
+import { normalizar } from "../extrair-habilidades";
 import { normalizarVaga } from "./normalizar";
 import type { FonteExterna } from "./tipos";
 
@@ -11,13 +12,21 @@ export type ResultadoDaFonte = {
   recebidas: number;
   salvas: number;
   descartadas: number;
+  /** Vagas boas que já existiam em uma fonte anterior e por isso não foram salvas de novo. */
+  repetidas?: number;
 };
+
+/** Identifica a "mesma vaga" em fontes diferentes: mesmo cargo na mesma empresa. */
+export function chaveDeVaga(titulo: string, empresa: string): string {
+  return `${normalizar(titulo).trim()}|${normalizar(empresa).trim()}`;
+}
 
 export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] = FONTES): Promise<ResultadoDaFonte[]> {
   const ids = new Map((await db.habilidade.findMany({ select: { id: true, slug: true } })).map((h) => [h.slug, h.id]));
   if (ids.size === 0) throw new Error("O catálogo de habilidades está vazio. Rode `npm run db:preparar` antes.");
 
   const resultados: ResultadoDaFonte[] = [];
+  const origensAnteriores: string[] = [];
 
   for (const fonte of fontes) {
     const base = { rotulo: fonte.rotulo, recebidas: 0, salvas: 0, descartadas: 0 };
@@ -25,6 +34,7 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
     const motivo = fonte.indisponivel();
     if (motivo) {
       resultados.push({ ...base, situacao: "pulada", detalhe: motivo });
+      origensAnteriores.push(fonte.origem);
       continue;
     }
 
@@ -32,10 +42,19 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
       const brutas = await fonte.buscar();
       // A mesma vaga pode vir em mais de uma busca.
       const unicas = [...new Map(brutas.map((v) => [v.idExterno, v])).values()];
-      const aceitas = unicas.flatMap((v) => {
+      const normalizadas = unicas.flatMap((v) => {
         const n = normalizarVaga(v, HABILIDADES);
         return n ? [n] : [];
       });
+
+      // A mesma vaga costuma aparecer em mais de uma fonte (a Adzuna, por exemplo, agrega vagas da Gupy).
+      // Vale a das fontes anteriores na lista, que são as de dados mais completos.
+      const jaExistentes = new Set(
+        (await db.vaga.findMany({ where: { origem: { in: origensAnteriores } }, select: { titulo: true, empresa: true } })).map(
+          (x) => chaveDeVaga(x.titulo, x.empresa),
+        ),
+      );
+      const aceitas = normalizadas.filter((v) => !jaExistentes.has(chaveDeVaga(v.titulo, v.empresa)));
 
       for (const v of aceitas) {
         const dados = {
@@ -79,10 +98,12 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
         recebidas: unicas.length,
         salvas: aceitas.length,
         descartadas: unicas.length - aceitas.length,
+        repetidas: normalizadas.length - aceitas.length,
       });
     } catch (e) {
       resultados.push({ ...base, situacao: "erro", detalhe: e instanceof Error ? e.message : String(e) });
     }
+    origensAnteriores.push(fonte.origem);
   }
   return resultados;
 }

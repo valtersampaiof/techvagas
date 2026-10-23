@@ -23,6 +23,8 @@ function arrumarEspacos(s: string): string {
 export function htmlParaTexto(html: string): string {
   const semBlocos = html
     .replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
+    // Etiquetas dentro da frase não separam palavras: <strong>SQL</strong>. vira "SQL." (sem espaço antes do ponto).
+    .replace(/<\/?(strong|b|em|i|u|span|a|font|mark|small|sub|sup|code)(\s[^>]*)?>/gi, "")
     .replace(/<(br|\/p|\/div|\/li|\/h[1-6]|\/tr)\s*\/?>/gi, "\n")
     .replace(/<li[^>]*>/gi, "• ")
     .replace(/<[^>]+>/g, " ");
@@ -39,6 +41,16 @@ export function markdownParaTexto(md: string): string {
     .replace(/(\*\*|__|\*|_|`)/g, "")
     .replace(/<!--[\s\S]*?-->/g, " ");
   return htmlParaTexto(limpo);
+}
+
+/**
+ * Algumas fontes (a Gupy, por exemplo) entregam o texto com as frases coladas: "objetivo.Nessa oportunidade".
+ * Separa só o caso seguro: letra minúscula + pontuação + palavra que começa com maiúscula e segue com
+ * minúsculas. Não mexe em "ASP.NET", "Node.js" nem em "JavaScript". Use apenas no texto EXIBIDO,
+ * nunca antes de procurar habilidades.
+ */
+export function espacarFrases(texto: string): string {
+  return texto.replace(/([a-zà-ú\)])([.!?;:])([A-ZÀ-Ú][a-zà-ú])/g, "$1$2 $3");
 }
 
 export function truncar(texto: string, limite: number): string {

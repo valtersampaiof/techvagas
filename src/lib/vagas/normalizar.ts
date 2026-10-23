@@ -1,6 +1,6 @@
 import type { HabilidadeBase } from "../dados/habilidades";
 import { extrairHabilidades, normalizar } from "../extrair-habilidades";
-import { truncar } from "./texto";
+import { espacarFrases, truncar } from "./texto";
 import type { VagaExterna } from "./tipos";
 
 export type TipoDeVaga = "estagio" | "trainee" | "junior";
@@ -85,7 +85,7 @@ export function areaPeloTitulo(titulo: string): string | null {
  * da Informação", que quase nunca listam tecnologias no resumo do anúncio.
  */
 const SINAIS_DE_TI =
-  /\b(t\.?i\.?|tecnologia da informacao|informatica|analista de sistemas|sistemas de informacao|software|desenvolvedor[a]?(?!(?: a)? de negocios)|desenvolvimento de (software|sistemas)|programador[a]?|analise e desenvolvimento|infraestrutura de ti|seguranca da informacao|ciberseguranca|suporte (tecnico|de ti|ti)|help ?desk|service desk|devops|qa|testes? de software|analista de dados|cientista de dados|engenheiro de dados|inteligencia de dados|business intelligence|dados e ia|front-?end|back-?end|full ?stack)\b/;
+  /\b(t\.?i\.?|tecnologia da informacao|informatica|analista de sistemas|sistemas de informacao|software|desenvolvedor[a]?(?!(?: a)? de negocios)|desenvolvimento de (software|sistemas)|programador[a]?|analise e desenvolvimento|infraestrutura de ti|seguranca da informacao|ciberseguranca|suporte (tecnico|de ti|ti)|tecnico de (suporte|informatica|ti)|analista de suporte(?! (comercial|ao cliente|de vendas|administrativo|financeiro|operacional|de negocios))|help ?desk|service desk|devops|qa|testes? de software|analista de dados|(estagio|estagiario|estagiaria) (em|de) (dados|data)(?! cadastra)|cientista de dados|engenheiro de dados|inteligencia de dados|business intelligence|dados e ia|front-?end|back-?end|full ?stack)\b/;
 
 export function pareceDeTI(titulo: string): boolean {
   return SINAIS_DE_TI.test(normalizar(titulo));
@@ -108,22 +108,33 @@ export function escolherArea(slugs: string[], catalogo: HabilidadeBase[], titulo
 }
 
 /**
+ * Habilidades que aparecem em muita vaga que NÃO é de TI (o "suporte" ao cliente, o "Excel" do
+ * administrativo, o inglês). Sozinhas, não bastam para provar que a vaga é de tecnologia.
+ */
+const HABILIDADES_FRACAS = new Set(["ingles", "ageis", "suporte", "analise-dados"]);
+const MIN_TECNICAS_FORTES_SEM_CARGO_DE_TI = 2;
+
+/**
  * Transforma uma vaga bruta em uma vaga do site. Devolve null quando não serve:
- * não é para iniciantes, ou nem o cargo nem o texto indicam trabalho de TI.
- * Vaga claramente de TI mas sem tecnologias citadas é mantida SEM requisitos; o site
- * mostra isso com clareza em vez de inventar uma compatibilidade.
+ *  - não é para iniciantes; ou
+ *  - não parece de TI: o cargo não indica tecnologia E o texto pede menos de duas habilidades técnicas fortes.
+ * Vaga claramente de TI mas sem tecnologias citadas é mantida SEM requisitos; o site mostra isso
+ * com clareza em vez de inventar uma compatibilidade.
  */
 export function normalizarVaga(v: VagaExterna, catalogo: HabilidadeBase[]): VagaNormalizada | null {
   const tipo = detectarTipo(v.titulo, v.rotulos);
   if (!tipo) return null;
 
   const requisitos = extrairRequisitos(v.titulo, v.descricao, catalogo);
-  if (requisitos.length === 0 && !pareceDeTI(v.titulo)) return null;
+  const tecnicasFortes = requisitos.filter((r) => r.obrigatorio && !HABILIDADES_FRACAS.has(r.slug)).length;
+  // Cargo sem cara de TI precisa de provas no texto: uma menção solta (ex.: "IA" num programa geral de estágio) não basta.
+  if (!pareceDeTI(v.titulo) && tecnicasFortes < MIN_TECNICAS_FORTES_SEM_CARGO_DE_TI) return null;
 
   return {
     ...v,
     cidade: v.cidade || "Brasil",
-    descricao: truncar(v.descricao, 1500),
+    // As habilidades já foram lidas do texto original; aqui só arrumamos a versão exibida.
+    descricao: truncar(espacarFrases(v.descricao), 1500),
     tipo,
     modalidade: detectarModalidade(v),
     area: escolherArea(requisitos.map((r) => r.slug), catalogo, v.titulo),

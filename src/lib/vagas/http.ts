@@ -28,22 +28,22 @@ export async function pedirJson(url: string, init: RequestInit = {}): Promise<un
 export const pausa = () => new Promise<void>((r) => setTimeout(r, PAUSA_ENTRE_CHAMADAS_MS));
 
 /**
- * Roda uma busca por termo e junta os resultados. Um termo que falha não derruba
- * os outros; só se TODOS falharem o erro sobe (a fonte inteira está com problema).
+ * Roda uma busca para cada item (um termo, ou um termo com filtros) e junta os resultados. Uma busca que
+ * falha não derruba as outras; só se TODAS falharem o erro sobe (a fonte inteira está com problema).
  */
-export async function buscarPorTermos<T>(termos: string[], buscar: (termo: string) => Promise<T[]>): Promise<T[]> {
+export async function buscarPorTermos<A, T>(itens: A[], buscar: (item: A) => Promise<T[]>): Promise<T[]> {
   const todos: T[] = [];
   let ultimoErro: unknown = null;
   let falhas = 0;
-  for (const termo of termos) {
+  for (const item of itens) {
     try {
-      todos.push(...(await buscar(termo)));
+      todos.push(...(await buscar(item)));
     } catch (e) {
       falhas++;
       ultimoErro = e;
     }
     await pausa();
   }
-  if (falhas === termos.length && ultimoErro) throw ultimoErro;
+  if (falhas === itens.length && ultimoErro) throw ultimoErro;
   return todos;
 }
