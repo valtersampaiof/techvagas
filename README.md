@@ -39,8 +39,8 @@ ele busca vagas reais, guarda no banco e **esconde as de exemplo** assim que hou
 | Fonte | Precisa de chave? | O que traz |
 | --- | --- | --- |
 | **Adzuna** | Sim (gratuita) | Vagas do Brasil de vários sites |
-| **Jooble** | Sim (gratuita) | Vagas do Brasil de vários sites |
-| **Remotive** | Não | Vagas 100% remotas (em inglês) abertas a quem mora no Brasil |
+| **Jooble** | Sim (gratuita) | Vagas do Brasil de vários sites. Alguns servidores recebem uma tela anti-robô; se acontecer, o resumo avisa |
+| **Remotive** | Não | Vagas 100% remotas (em inglês) abertas a quem mora no Brasil. A API pública devolve poucas vagas (em outubro/2026: 9 por categoria, nenhuma para iniciantes), então é só um complemento |
 | **Comunidades no GitHub** | Não (token opcional) | Vagas das comunidades brasileiras (`frontendbr/vagas`, `backend-br/vagas`, `qa-brasil/vagas`, `datascience-br/vagas`, `androiddevbr/vagas`) |
 
 Como conseguir as chaves (depois, cole no arquivo `.env`):

@@ -16,7 +16,13 @@ export async function pedirJson(url: string, init: RequestInit = {}): Promise<un
           : "";
     throw new Error(`HTTP ${resposta.status} em ${new URL(url).host}${dica}`);
   }
-  return resposta.json();
+  const texto = await resposta.text();
+  try {
+    return JSON.parse(texto);
+  } catch {
+    // Acontece, por exemplo, quando o site responde com uma tela de verificação anti-robô.
+    throw new Error(`${new URL(url).host} não devolveu dados (pode estar bloqueando acessos automáticos)`);
+  }
 }
 
 export const pausa = () => new Promise<void>((r) => setTimeout(r, PAUSA_ENTRE_CHAMADAS_MS));
