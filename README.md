@@ -39,9 +39,12 @@ ele busca vagas reais, guarda no banco e **esconde as de exemplo** assim que hou
 | Fonte | Precisa de chave? | O que traz |
 | --- | --- | --- |
 | **Adzuna** | Sim (gratuita) | Vagas do Brasil de vários sites. É a fonte principal; testada com dados reais (227 vagas recebidas, 178 aproveitadas numa execução) |
-| **Jooble** | Sim (gratuita) | Vagas do Brasil de vários sites. Alguns servidores recebem uma tela anti-robô; se acontecer, o resumo avisa |
+| **Jooble** | Sim (gratuita) | Funciona (testado com chave real), mas o índice do Brasil é pequeno e quase só traz vagas sênior de bancos e indústrias: numa execução, 70 recebidas e nenhuma para iniciante de TI. É só um complemento |
 | **Remotive** | Não | Vagas 100% remotas (em inglês) abertas a quem mora no Brasil. A API pública devolve poucas vagas (em outubro/2026: 9 por categoria, nenhuma para iniciantes), então é só um complemento |
 | **Comunidades no GitHub** | Não (token opcional) | Vagas das comunidades brasileiras (`frontendbr/vagas`, `backend-br/vagas`, `qa-brasil/vagas`, `datascience-br/vagas`, `androiddevbr/vagas`) |
+
+Detalhe do Jooble: o campo `location` da API precisa ser `"Brazil"` (em inglês). Com `"Brasil"` ela devolve zero vagas
+(o código já usa o valor certo). O endereço padrão é `jooble.org`; para trocar, defina `JOOBLE_HOST` no `.env`.
 
 Como conseguir as chaves (depois, cole no arquivo `.env`):
 

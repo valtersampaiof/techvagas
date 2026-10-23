@@ -4,13 +4,15 @@ import type { FonteExterna, VagaExterna } from "../tipos";
 
 /** API oficial da Jooble (https://jooble.org/api/about). Exige uma chave gratuita, pedida por formulário. */
 const TERMOS = [
-  "estágio desenvolvedor",
   "estágio ti",
-  "desenvolvedor júnior",
-  "suporte técnico júnior",
+  "estagiário",
+  "tecnologia da informação",
+  "analista de suporte",
   "analista de dados júnior",
-  "trainee tecnologia",
   "segurança da informação júnior",
+  "desenvolvedor junior",
+  "junior developer",
+  "software engineer intern",
 ];
 
 type VagaJooble = {
@@ -47,18 +49,27 @@ export function converterJooble(json: unknown): VagaExterna[] {
   });
 }
 
+/**
+ * Endereço oficial da API. Para usar outro (ex.: de um país específico), defina JOOBLE_HOST no .env.
+ * Atenção: o campo `location` precisa ser "Brazil" (em inglês); com "Brasil" a Jooble devolve zero vagas.
+ */
+const HOST_PADRAO = "jooble.org";
+const LOCAL = "Brazil";
+
 export const jooble: FonteExterna = {
   origem: "jooble",
   rotulo: "Jooble",
   indisponivel: () => (process.env.JOOBLE_API_KEY ? null : "defina JOOBLE_API_KEY no arquivo .env"),
 
   async buscar() {
+    const host = process.env.JOOBLE_HOST?.trim() || HOST_PADRAO;
+    const chave = encodeURIComponent(process.env.JOOBLE_API_KEY!);
     return buscarPorTermos(TERMOS, async (termo) =>
       converterJooble(
-        await pedirJson(`https://jooble.org/api/${encodeURIComponent(process.env.JOOBLE_API_KEY!)}`, {
+        await pedirJson(`https://${host}/api/${chave}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ keywords: termo, location: "Brasil", page: "1" }),
+          body: JSON.stringify({ keywords: termo, location: LOCAL, page: "1" }),
         }),
       ),
     );
