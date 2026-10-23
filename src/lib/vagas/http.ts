@@ -5,7 +5,7 @@ export async function pedirJson(url: string, init: RequestInit = {}): Promise<un
   const resposta = await fetch(url, {
     ...init,
     signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
-    headers: { Accept: "application/json", "User-Agent": "rota-ti (vagas para estudantes de TI)", ...init.headers },
+    headers: { Accept: "application/json", "User-Agent": "techvagas (vagas para estudantes de TI)", ...init.headers },
   });
   if (!resposta.ok) {
     const dica =

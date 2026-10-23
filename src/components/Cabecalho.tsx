@@ -9,7 +9,7 @@ export async function Cabecalho() {
     <header className="bg-white border-b border-slate-200">
       <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
         <Link href="/" className="text-lg font-bold text-indigo-700">
-          Rota TI
+          TechVagas
         </Link>
         <nav className="flex gap-4 text-sm font-medium text-slate-700">
           <Link href="/vagas" className="hover:text-indigo-700">Vagas</Link>

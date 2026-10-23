@@ -1,4 +1,4 @@
-# Rota TI
+# TechVagas
 
 Site de vagas de TI para jovens estudantes no Brasil (estágio, trainee e júnior). Além de buscar vagas, ele
 compara o perfil do estudante com os requisitos de cada vaga e indica **cursos gratuitos e pagos, com certificado**,
