@@ -1,4 +1,5 @@
 import type { Nivel } from "../niveis";
+import { CURSOS_EXTRA } from "./cursos-extra";
 
 export type CursoBase = {
   titulo: string;
@@ -19,7 +20,7 @@ export type CursoBase = {
  * mudam com frequência nas plataformas — conferir cada item no site da
  * instituição antes de publicar. Os links apontam para páginas gerais.
  */
-export const CURSOS: CursoBase[] = [
+const CURSOS_BASE: CursoBase[] = [
   // ---------- Lógica e programação ----------
   {
     titulo: "CS50x — Introdução à Ciência da Computação",
@@ -562,3 +563,5 @@ export const CURSOS: CursoBase[] = [
     habilidades: [["ingles", "intermediario"]],
   },
 ];
+
+export const CURSOS: CursoBase[] = [...CURSOS_BASE, ...CURSOS_EXTRA];

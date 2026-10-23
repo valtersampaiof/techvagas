@@ -6,10 +6,10 @@ import { VAGAS } from "../src/lib/dados/vagas";
 const db = new PrismaClient();
 
 async function main() {
-  // Recria só o catálogo; contas de usuário e seus perfis são preservados.
-  await db.requisitoDaVaga.deleteMany();
+  // Recria o catálogo de cursos e as vagas de exemplo. Contas, perfis e vagas
+  // reais já sincronizadas são preservados.
   await db.habilidadeDoCurso.deleteMany();
-  await db.vaga.deleteMany();
+  await db.vaga.deleteMany({ where: { origem: "exemplo" } });
   await db.curso.deleteMany();
 
   for (const h of HABILIDADES) {

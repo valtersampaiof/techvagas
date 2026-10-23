@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { VagaComRequisitos } from "@/lib/fonte-de-vagas";
-import { ROTULO_MODALIDADE, ROTULO_TIPO } from "@/lib/rotulos";
+import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO } from "@/lib/rotulos";
 import { SeloCompatibilidade } from "./SeloCompatibilidade";
 
 export function CartaoVaga({ vaga, percentual }: { vaga: VagaComRequisitos; percentual: number | null }) {
@@ -23,6 +23,7 @@ export function CartaoVaga({ vaga, percentual }: { vaga: VagaComRequisitos; perc
         <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">{ROTULO_TIPO[vaga.tipo] ?? vaga.tipo}</span>
         <span className="rounded bg-slate-100 px-2 py-1 text-slate-700">{ROTULO_MODALIDADE[vaga.modalidade] ?? vaga.modalidade}</span>
         <span className="rounded bg-slate-100 px-2 py-1 text-slate-700">{vaga.area}</span>
+        <span className="rounded bg-amber-50 px-2 py-1 text-amber-800">{ROTULO_ORIGEM[vaga.origem] ?? vaga.origem}</span>
       </div>
     </Link>
   );

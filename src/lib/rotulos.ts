@@ -9,3 +9,11 @@ export const ROTULO_MODALIDADE: Record<string, string> = {
   hibrido: "Híbrido",
   remoto: "Remoto",
 };
+
+export const ROTULO_ORIGEM: Record<string, string> = {
+  exemplo: "Vaga de exemplo",
+  adzuna: "Adzuna",
+  jooble: "Jooble",
+  remotive: "Remotive",
+  github: "Comunidades no GitHub",
+};

@@ -18,6 +18,8 @@ export type VagaComRequisitos = {
   area: string;
   descricao: string;
   link: string;
+  origem: string;
+  publicadaEm: Date | null;
   requisitos: Requisito[];
 };
 
@@ -49,6 +51,8 @@ function converter(v: VagaDoBanco): VagaComRequisitos {
     area: v.area,
     descricao: v.descricao,
     link: v.link,
+    origem: v.origem,
+    publicadaEm: v.publicadaEm,
     requisitos: v.requisitos.map((r) => ({
       slug: r.habilidade.slug,
       nome: r.habilidade.nome,
@@ -58,10 +62,20 @@ function converter(v: VagaDoBanco): VagaComRequisitos {
   };
 }
 
+/**
+ * As vagas de exemplo só servem para demonstrar o site. Assim que existir ao
+ * menos uma vaga real, elas deixam de aparecer nas listagens.
+ */
+async function filtroDeOrigem() {
+  const reais = await db.vaga.count({ where: { origem: { not: "exemplo" } } });
+  return reais > 0 ? { origem: { not: "exemplo" } } : {};
+}
+
 export const fonteDeVagas: FonteDeVagas = {
   async listar({ busca, tipo, modalidade, area }) {
     const vagas = await db.vaga.findMany({
       where: {
+        ...(await filtroDeOrigem()),
         ...(tipo ? { tipo } : {}),
         ...(modalidade ? { modalidade } : {}),
         ...(area ? { area } : {}),
@@ -70,7 +84,7 @@ export const fonteDeVagas: FonteDeVagas = {
           : {}),
       },
       include: incluirRequisitos,
-      orderBy: { id: "asc" },
+      orderBy: [{ publicadaEm: { sort: "desc", nulls: "last" } }, { id: "asc" }],
     });
     return vagas.map(converter);
   },
@@ -81,7 +95,12 @@ export const fonteDeVagas: FonteDeVagas = {
   },
 
   async areas() {
-    const linhas = await db.vaga.findMany({ select: { area: true }, distinct: ["area"], orderBy: { area: "asc" } });
+    const linhas = await db.vaga.findMany({
+      where: await filtroDeOrigem(),
+      select: { area: true },
+      distinct: ["area"],
+      orderBy: { area: "asc" },
+    });
     return linhas.map((l) => l.area);
   },
 };

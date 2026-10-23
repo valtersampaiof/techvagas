@@ -10,11 +10,13 @@ const passos = [
 ];
 
 export default async function Inicio() {
-  const [vagas, cursos, gratuitos] = await Promise.all([
-    db.vaga.count(),
+  const [reais, exemplos, cursos, gratuitos] = await Promise.all([
+    db.vaga.count({ where: { origem: { not: "exemplo" } } }),
+    db.vaga.count({ where: { origem: "exemplo" } }),
     db.curso.count(),
     db.curso.count({ where: { gratuito: true } }),
   ]);
+  const vagas = reais > 0 ? reais : exemplos;
 
   return (
     <div className="space-y-14">
@@ -35,7 +37,7 @@ export default async function Inicio() {
           </Link>
         </div>
         <p className="mt-6 text-sm text-indigo-100">
-          {vagas} vagas de exemplo · {cursos} cursos ({gratuitos} gratuitos)
+          {vagas} {reais > 0 ? (vagas === 1 ? "vaga real" : "vagas reais") : "vagas de exemplo"} · {cursos} cursos ({gratuitos} gratuitos)
         </p>
       </section>
 

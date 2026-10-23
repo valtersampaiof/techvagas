@@ -41,3 +41,12 @@ describe("normalizar", () => {
     expect(normalizar("Computação  Ágil")).toBe("computacao agil");
   });
 });
+
+describe("expressões que enganam", () => {
+  it("'redes sociais' não é Redes de computadores", () => {
+    expect(extrairHabilidades("Gestão de redes sociais e conteúdo", HABILIDADES)).not.toContain("redes");
+  });
+  it("mas 'redes' sozinha, de computadores, continua valendo", () => {
+    expect(extrairHabilidades("Habilidades: redes, redes sociais", HABILIDADES)).toContain("redes");
+  });
+});

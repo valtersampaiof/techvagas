@@ -5,7 +5,7 @@ import { calcularCompatibilidade, recomendarCursos, type Lacuna } from "@/lib/co
 import { listarCursosCandidatos } from "@/lib/cursos";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
-import { ROTULO_MODALIDADE, ROTULO_TIPO } from "@/lib/rotulos";
+import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO } from "@/lib/rotulos";
 import { usuarioAtual } from "@/lib/sessao";
 import { CartaoCurso } from "@/components/CartaoCurso";
 import { SeloCompatibilidade } from "@/components/SeloCompatibilidade";
@@ -57,8 +57,28 @@ export default async function PaginaDaVaga({ params }: Props) {
           <span className="rounded bg-slate-100 px-2 py-1">{ROTULO_MODALIDADE[vaga.modalidade] ?? vaga.modalidade}</span>
           <span className="rounded bg-slate-100 px-2 py-1">{vaga.area}</span>
         </div>
-        <p className="mt-4 text-slate-700">{vaga.descricao}</p>
-        <p className="mt-3 text-xs text-amber-700">Vaga fictícia, criada apenas para demonstração.</p>
+        <p className="mt-4 whitespace-pre-line text-slate-700">{vaga.descricao}</p>
+        {vaga.origem === "exemplo" ? (
+          <p className="mt-3 text-xs text-amber-700">Vaga fictícia, criada apenas para demonstração.</p>
+        ) : (
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {vaga.link && (
+              <a
+                href={vaga.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                Ver vaga e candidatar-se ↗
+              </a>
+            )}
+            <p className="text-xs text-slate-500">
+              Fonte: {ROTULO_ORIGEM[vaga.origem] ?? vaga.origem}
+              {vaga.publicadaEm && ` · publicada em ${vaga.publicadaEm.toLocaleDateString("pt-BR")}`}. Os requisitos foram
+              identificados automaticamente pelo texto do anúncio; confira os detalhes na vaga original.
+            </p>
+          </div>
+        )}
       </header>
 
       <section>

@@ -55,7 +55,15 @@ model Vaga {
   descricao   String
   link        String @default("")
 
+  // De onde veio: "exemplo" (vagas fictícias da demonstração) ou o nome de uma fonte real.
+  origem        String   @default("exemplo")
+  idExterno     String?  // identificador da vaga na fonte; vazio nas vagas de exemplo
+  publicadaEm   DateTime?
+  atualizadaEm  DateTime @default(now())
+
   requisitos  RequisitoDaVaga[]
+
+  @@unique([origem, idExterno])
 }
 
 model RequisitoDaVaga {

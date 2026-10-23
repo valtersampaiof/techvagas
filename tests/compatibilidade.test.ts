@@ -158,3 +158,29 @@ describe("recomendarCursos: foco do curso", () => {
     expect(rec.porLacuna[0].melhorPago?.id).toBe(2);
   });
 });
+
+describe("recomendarCursos: dedicação e atalho", () => {
+  it("para a lacuna de inglês, um curso de inglês vence um curso de segurança que só cita inglês", () => {
+    const lacunas = calcularCompatibilidade([req("seguranca", "iniciante", true), req("ingles", "iniciante", false)], []).lacunas;
+    const rec = recomendarCursos(lacunas, [
+      curso(1, { certificado: true, habilidades: [{ slug: "seguranca", nivelEnsinado: "intermediario", principal: true }, { slug: "ingles", nivelEnsinado: "iniciante" }] }),
+      curso(2, { certificado: true, habilidades: [{ slug: "ingles", nivelEnsinado: "intermediario", principal: true }] }),
+    ]);
+    const ingles = rec.porLacuna.find((p) => p.lacuna.slug === "ingles")!;
+    expect(ingles.melhorGratuito?.id).toBe(2);
+    const seg = rec.porLacuna.find((p) => p.lacuna.slug === "seguranca")!;
+    expect(seg.melhorGratuito?.id).toBe(1);
+  });
+
+  it("o atalho dá preferência a cursos que cobrem lacunas obrigatórias", () => {
+    const lacunas = calcularCompatibilidade(
+      [req("seguranca", "iniciante", true), req("python", "iniciante", false), req("ingles", "iniciante", false)],
+      [],
+    ).lacunas;
+    const rec = recomendarCursos(lacunas, [
+      curso(1, { habilidades: [{ slug: "python", nivelEnsinado: "iniciante" }, { slug: "ingles", nivelEnsinado: "iniciante" }] }),
+      curso(2, { habilidades: [{ slug: "seguranca", nivelEnsinado: "iniciante" }, { slug: "ingles", nivelEnsinado: "iniciante" }] }),
+    ]);
+    expect(rec.maisUteis.map((m) => m.curso.id)).toEqual([2, 1]);
+  });
+});

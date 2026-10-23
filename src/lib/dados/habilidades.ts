@@ -9,6 +9,11 @@ export type HabilidadeBase = {
 export const HABILIDADES: HabilidadeBase[] = [
   { slug: "logica", nome: "Lógica de programação", area: "Programação", sinonimos: ["algoritmos", "logica de programacao", "estrutura de dados", "estruturas de dados"] },
   { slug: "python", nome: "Python", area: "Programação", sinonimos: ["python3", "django", "flask", "pandas"] },
+  { slug: "php", nome: "PHP", area: "Programação", sinonimos: ["laravel", "wordpress", "symfony"] },
+  { slug: "mobile", nome: "Desenvolvimento mobile", area: "Programação", sinonimos: ["android", "ios", "flutter", "react native", "kotlin", "swift", "aplicativos moveis", "app mobile", "dart"] },
+  { slug: "ia-ml", nome: "Inteligência artificial e machine learning", area: "Dados", sinonimos: ["machine learning", "aprendizado de maquina", "inteligencia artificial", "deep learning", "ia generativa", "llm", "ciencia de dados", "data science", "tensorflow", "pytorch"] },
+  { slug: "nosql", nome: "Bancos NoSQL", area: "Dados", sinonimos: ["nosql", "mongodb", "redis", "cassandra", "dynamodb", "firebase"] },
+  { slug: "ux-design", nome: "UX e design de interfaces", area: "Design", sinonimos: ["ux", "ui", "ux/ui", "design de interface", "figma", "prototipagem", "experiencia do usuario", "user experience", "design thinking"] },
   { slug: "java", nome: "Java", area: "Programação", sinonimos: ["spring", "spring boot", "jvm"] },
   { slug: "csharp", nome: "C#", area: "Programação", sinonimos: ["c sharp", ".net", "dotnet", "asp.net"] },
   { slug: "html-css", nome: "HTML e CSS", area: "Desenvolvimento web", sinonimos: ["html", "css", "html5", "css3", "tailwind", "bootstrap"] },

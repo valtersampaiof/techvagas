@@ -102,20 +102,18 @@ function nivelEnsinadoDe(curso: CursoCandidato, slug: string): number {
 }
 
 /**
- * Quanto maior, melhor o curso para esta lacuna. O que mais pesa é a adequação
- * ao estudante (não pedir mais do que ele tem); depois vêm o foco do curso na
- * habilidade, o certificado e o bônus por cobrir outras lacunas da mesma vaga.
+ * Quanto maior, melhor o curso para esta lacuna. Pesa mais o curso ser DEDICADO à
+ * habilidade (ela é a principal dele); depois a adequação ao nível do estudante; e,
+ * por último, o certificado e o bônus por cobrir de passagem outras lacunas.
+ * Cursos que resolvem várias lacunas ao mesmo tempo aparecem no bloco "atalho".
  */
 function pontuar(curso: CursoCandidato, lacuna: Lacuna, todas: Lacuna[]): number {
   let pontos = 0;
-  // Bônus por resolver outras lacunas de uma vez; as obrigatórias valem mais.
+  if (curso.habilidades.some((h) => h.slug === lacuna.slug && h.principal)) pontos += 10;
   for (const outra of todas) {
-    if (outra.slug !== lacuna.slug && ensina(curso, outra)) pontos += outra.obrigatorio ? 10 : 4;
+    if (outra.slug !== lacuna.slug && ensina(curso, outra)) pontos += outra.obrigatorio ? 4 : 1;
   }
   if (curso.certificado) pontos += 3;
-  // Curso dedicado à habilidade (ela é a principal dele) vale mais que um
-  // curso que só passa por ela.
-  if (curso.habilidades.some((h) => h.slug === lacuna.slug && h.principal)) pontos += 5;
   // Curso que já começa acima do nível do estudante tende a frustrar.
   const nivelDoEstudante = lacuna.nivelAtual ?? "iniciante";
   if (pesoNivel(curso.nivel) > pesoNivel(nivelDoEstudante)) pontos -= 10;
@@ -138,14 +136,17 @@ export function recomendarCursos(lacunas: Lacuna[], cursos: CursoCandidato[]): R
     };
   });
 
+  // Atalho: cursos que cobrem 2+ lacunas, contando as obrigatórias o triplo das desejáveis.
+  const peso = (l: Lacuna) => (l.obrigatorio ? 3 : 1);
   const maisUteis = cursos
-    .map((curso) => ({
-      curso,
-      lacunasCobertas: lacunasCobertas(curso, lacunas).map((l) => l.nome),
-    }))
-    .filter((x) => x.lacunasCobertas.length >= 2)
-    .sort((a, b) => b.lacunasCobertas.length - a.lacunasCobertas.length)
-    .slice(0, 3);
+    .map((curso) => {
+      const cobertas = lacunasCobertas(curso, lacunas);
+      return { curso, cobertas, valor: cobertas.reduce((soma, l) => soma + peso(l), 0) };
+    })
+    .filter((x) => x.cobertas.length >= 2)
+    .sort((a, b) => b.valor - a.valor || Number(b.curso.certificado) - Number(a.curso.certificado) || a.curso.cargaHoraria - b.curso.cargaHoraria)
+    .slice(0, 3)
+    .map(({ curso, cobertas }) => ({ curso, lacunasCobertas: cobertas.map((l) => l.nome) }));
 
   return { porLacuna, maisUteis };
 }

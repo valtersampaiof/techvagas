@@ -27,8 +27,11 @@ function contemTermo(textoNormalizado: string, termo: string): boolean {
 /** Termos curtos demais geram falso positivo; só valem se estiverem escritos em maiúsculas no original. */
 const AMBIGUOS_CURTOS = new Set(["ts", "js", "bi", "qa", "soc", "lan"]);
 
+/** Expressões que contêm o nome de uma habilidade mas falam de outra coisa. */
+const EXPRESSOES_IGNORADAS = /\b(redes? sociais|redes? de (relacionamento|contatos?)|redes? de apoio)\b/g;
+
 export function extrairHabilidades(texto: string, catalogo: HabilidadeBase[]): string[] {
-  const norm = normalizar(texto);
+  const norm = normalizar(texto).replace(EXPRESSOES_IGNORADAS, " ");
   const encontradas: string[] = [];
 
   for (const h of catalogo) {
