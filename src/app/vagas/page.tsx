@@ -28,11 +28,15 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
 
   let itens = vagas.map((vaga) => ({
     vaga,
-    percentual: temPerfil ? calcularCompatibilidade(vaga.requisitos, habilidades).percentual : null,
+    // Sem requisitos identificados não dá para calcular compatibilidade (100% seria enganoso).
+    percentual: temPerfil && vaga.requisitos.length > 0 ? calcularCompatibilidade(vaga.requisitos, habilidades).percentual : null,
   }));
   if (temPerfil) {
     if (filtros.compativeis) itens = itens.filter((i) => (i.percentual ?? 0) >= COMPATIBILIDADE_MINIMA);
-    itens.sort((a, b) => (b.percentual ?? 0) - (a.percentual ?? 0));
+    // Em empate, vem primeiro a vaga com mais requisitos identificados: a compatibilidade é mais confiável.
+    itens.sort(
+      (a, b) => (b.percentual ?? -1) - (a.percentual ?? -1) || b.vaga.requisitos.length - a.vaga.requisitos.length,
+    );
   }
 
   return (

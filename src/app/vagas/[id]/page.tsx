@@ -34,6 +34,7 @@ export default async function PaginaDaVaga({ params }: Props) {
   const logado = usuario !== null;
   const temPerfil = habilidades.length > 0;
 
+  const semRequisitos = vaga.requisitos.length === 0;
   const compat = calcularCompatibilidade(vaga.requisitos, habilidades);
   const cursos = await listarCursosCandidatos();
   // Sem perfil, mostramos cursos para todos os requisitos da vaga.
@@ -50,7 +51,7 @@ export default async function PaginaDaVaga({ params }: Props) {
             <h1 className="text-2xl font-bold">{vaga.titulo}</h1>
             <p className="text-slate-600">{vaga.empresa} · {vaga.cidade}</p>
           </div>
-          {temPerfil && <SeloCompatibilidade percentual={compat.percentual} />}
+          {temPerfil && !semRequisitos && <SeloCompatibilidade percentual={compat.percentual} />}
         </div>
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">{ROTULO_TIPO[vaga.tipo] ?? vaga.tipo}</span>
@@ -81,6 +82,19 @@ export default async function PaginaDaVaga({ params }: Props) {
         )}
       </header>
 
+      {semRequisitos ? (
+        <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="text-lg font-bold">O que a vaga pede</h2>
+          <p className="mt-2 text-sm text-slate-700">
+            O resumo deste anúncio não cita tecnologias específicas, então <strong>não calculamos compatibilidade</strong>{" "}
+            nem indicamos cursos para esta vaga. Abra a vaga original para ver os requisitos completos.
+          </p>
+          <p className="mt-2 text-sm text-slate-600">
+            Enquanto isso, veja o <Link href="/cursos" className="font-medium text-indigo-700 underline">catálogo de cursos</Link>{" "}
+            para fortalecer o que costuma ser pedido em vagas de {vaga.area === "TI em geral" ? "TI" : vaga.area.toLowerCase()}.
+          </p>
+        </section>
+      ) : (
       <section>
         <h2 className="text-lg font-bold">O que a vaga pede</h2>
         {!logado && (
@@ -120,7 +134,9 @@ export default async function PaginaDaVaga({ params }: Props) {
         </ul>
       </section>
 
-      {lacunas.length > 0 && (
+      )}
+
+      {!semRequisitos && lacunas.length > 0 && (
         <section>
           <h2 className="text-lg font-bold">
             {temPerfil ? "Cursos para chegar lá" : "Cursos para os requisitos desta vaga"}
@@ -169,7 +185,7 @@ export default async function PaginaDaVaga({ params }: Props) {
         </section>
       )}
 
-      {temPerfil && lacunas.length === 0 && (
+      {temPerfil && !semRequisitos && lacunas.length === 0 && (
         <p className="rounded-md bg-emerald-50 px-4 py-3 text-emerald-800">
           Você cobre todos os requisitos desta vaga. Bom momento para se candidatar!
         </p>

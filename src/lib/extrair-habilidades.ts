@@ -25,7 +25,7 @@ function contemTermo(textoNormalizado: string, termo: string): boolean {
 }
 
 /** Termos curtos demais geram falso positivo; só valem se estiverem escritos em maiúsculas no original. */
-const AMBIGUOS_CURTOS = new Set(["ts", "js", "bi", "qa", "soc", "lan"]);
+const AMBIGUOS_CURTOS = new Set(["ts", "js", "bi", "qa", "soc", "lan", "ia"]);
 
 /** Expressões que contêm o nome de uma habilidade mas falam de outra coisa. */
 const EXPRESSOES_IGNORADAS = /\b(redes? sociais|redes? de (relacionamento|contatos?)|redes? de apoio)\b/g;

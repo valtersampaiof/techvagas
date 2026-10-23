@@ -50,3 +50,22 @@ describe("expressões que enganam", () => {
     expect(extrairHabilidades("Habilidades: redes, redes sociais", HABILIDADES)).toContain("redes");
   });
 });
+
+describe("palavras genéricas", () => {
+  it("'suporte' solto não é Suporte técnico, mas 'suporte técnico' e 'help desk' são", () => {
+    expect(extrairHabilidades("Dar suporte ao time de produto", HABILIDADES)).not.toContain("suporte");
+    expect(extrairHabilidades("Experiência com suporte técnico", HABILIDADES)).toContain("suporte");
+    expect(extrairHabilidades("Atuação em Help Desk", HABILIDADES)).toContain("suporte");
+  });
+  it("front-end e back-end indicam as habilidades básicas da área", () => {
+    expect(extrairHabilidades("Desenvolvedor Front-end", HABILIDADES)).toEqual(expect.arrayContaining(["html-css", "javascript"]));
+    expect(extrairHabilidades("Desenvolvedor Back-end", HABILIDADES)).toContain("api-rest");
+  });
+});
+
+describe("sigla IA", () => {
+  it("reconhece 'IA' em maiúsculas, mas não o verbo 'ia'", () => {
+    expect(extrairHabilidades("Estagiário de Dados e IA", HABILIDADES)).toContain("ia-ml");
+    expect(extrairHabilidades("Ele ia ao trabalho de ônibus", HABILIDADES)).not.toContain("ia-ml");
+  });
+});

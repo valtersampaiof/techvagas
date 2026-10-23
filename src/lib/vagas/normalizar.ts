@@ -65,10 +65,36 @@ export function extrairRequisitos(titulo: string, descricao: string, catalogo: H
 
 const AREAS_GENERICAS = new Set(["Ferramentas", "Idiomas", "Gestão"]);
 
+/** Área sugerida pelo cargo, para quando os requisitos não bastam (ou não existem). */
+const AREAS_PELO_TITULO: [RegExp, string][] = [
+  [/\b(seguranca da informacao|ciberseguranca|cybersecurity|soc)\b/, "Segurança"],
+  [/\b(qa|testes?|qualidade de software|tester)\b/, "Qualidade"],
+  [/\b(dados|data|bi|business intelligence|cientista)\b/, "Dados"],
+  [/\b(infraestrutura|redes|devops|cloud|sysadmin)\b/, "Infraestrutura"],
+  [/\b(suporte|help ?desk|service desk)\b/, "Suporte"],
+  [/\b(desenvolvedor[a]?|desenvolvimento de (software|sistemas)|programador[a]?|software|developer|engineer|engenheiro de software)\b/, "Programação"],
+];
+
+export function areaPeloTitulo(titulo: string): string | null {
+  const t = normalizar(titulo);
+  return AREAS_PELO_TITULO.find(([regex]) => regex.test(t))?.[1] ?? null;
+}
+
+/**
+ * Título que indica trabalho de TI. Serve para manter vagas como "Estágio em Tecnologia
+ * da Informação", que quase nunca listam tecnologias no resumo do anúncio.
+ */
+const SINAIS_DE_TI =
+  /\b(t\.?i\.?|tecnologia da informacao|informatica|analista de sistemas|sistemas de informacao|software|desenvolvedor[a]?(?!(?: a)? de negocios)|desenvolvimento de (software|sistemas)|programador[a]?|analise e desenvolvimento|infraestrutura de ti|seguranca da informacao|ciberseguranca|suporte (tecnico|de ti|ti)|help ?desk|service desk|devops|qa|testes? de software|analista de dados|cientista de dados|engenheiro de dados|inteligencia de dados|business intelligence|dados e ia|front-?end|back-?end|full ?stack)\b/;
+
+export function pareceDeTI(titulo: string): boolean {
+  return SINAIS_DE_TI.test(normalizar(titulo));
+}
+
 /**
  * A área que mais pesa entre as habilidades pedidas (ignorando as genéricas).
  * Habilidade citada no título vale três vezes mais: o cargo diz mais sobre a área
- * do que a lista de requisitos.
+ * do que a lista de requisitos. Sem pistas nas habilidades, usa o cargo.
  */
 export function escolherArea(slugs: string[], catalogo: HabilidadeBase[], titulo = ""): string {
   const doTitulo = new Set(titulo ? extrairHabilidades(titulo, catalogo) : []);
@@ -77,21 +103,22 @@ export function escolherArea(slugs: string[], catalogo: HabilidadeBase[], titulo
     const area = catalogo.find((h) => h.slug === slug)?.area;
     if (area && !AREAS_GENERICAS.has(area)) pontos.set(area, (pontos.get(area) ?? 0) + (doTitulo.has(slug) ? 3 : 1));
   }
-  const ordenadas = [...pontos.entries()].sort((a, b) => b[1] - a[1]);
-  return ordenadas[0]?.[0] ?? catalogo.find((h) => h.slug === slugs[0])?.area ?? "Outras";
+  const melhor = [...pontos.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  return melhor ?? areaPeloTitulo(titulo) ?? catalogo.find((h) => h.slug === slugs[0])?.area ?? "TI em geral";
 }
 
 /**
  * Transforma uma vaga bruta em uma vaga do site. Devolve null quando não serve:
- * não é para iniciantes, ou não pede nenhuma habilidade que a gente reconheça
- * (nesse caso a "compatibilidade" não significaria nada).
+ * não é para iniciantes, ou nem o cargo nem o texto indicam trabalho de TI.
+ * Vaga claramente de TI mas sem tecnologias citadas é mantida SEM requisitos; o site
+ * mostra isso com clareza em vez de inventar uma compatibilidade.
  */
 export function normalizarVaga(v: VagaExterna, catalogo: HabilidadeBase[]): VagaNormalizada | null {
   const tipo = detectarTipo(v.titulo, v.rotulos);
   if (!tipo) return null;
 
   const requisitos = extrairRequisitos(v.titulo, v.descricao, catalogo);
-  if (requisitos.length === 0) return null;
+  if (requisitos.length === 0 && !pareceDeTI(v.titulo)) return null;
 
   return {
     ...v,

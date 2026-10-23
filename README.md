@@ -38,7 +38,7 @@ ele busca vagas reais, guarda no banco e **esconde as de exemplo** assim que hou
 
 | Fonte | Precisa de chave? | O que traz |
 | --- | --- | --- |
-| **Adzuna** | Sim (gratuita) | Vagas do Brasil de vários sites |
+| **Adzuna** | Sim (gratuita) | Vagas do Brasil de vários sites. É a fonte principal; testada com dados reais (227 vagas recebidas, 178 aproveitadas numa execução) |
 | **Jooble** | Sim (gratuita) | Vagas do Brasil de vários sites. Alguns servidores recebem uma tela anti-robô; se acontecer, o resumo avisa |
 | **Remotive** | Não | Vagas 100% remotas (em inglês) abertas a quem mora no Brasil. A API pública devolve poucas vagas (em outubro/2026: 9 por categoria, nenhuma para iniciantes), então é só um complemento |
 | **Comunidades no GitHub** | Não (token opcional) | Vagas das comunidades brasileiras (`frontendbr/vagas`, `backend-br/vagas`, `qa-brasil/vagas`, `datascience-br/vagas`, `androiddevbr/vagas`) |
@@ -56,7 +56,10 @@ O que o comando faz com cada vaga:
 - guarda **só estágio, trainee e júnior** (descarta pleno, sênior, líder etc.);
 - descobre as habilidades pedidas lendo o texto do anúncio; o que vem depois de "diferenciais/desejável" vira
   requisito *desejável*;
-- descarta a vaga se não reconhecer nenhuma habilidade (a compatibilidade não faria sentido);
+- deduz habilidades básicas pelo cargo (ex.: "Front-end" implica HTML/CSS e JavaScript; "Analista de Dados" implica análise de dados);
+- mantém vagas que claramente são de TI mesmo sem tecnologias no texto (ex.: "Estágio em Tecnologia da Informação"), mas **sem
+  requisitos**: o site não calcula compatibilidade nem indica cursos para elas, e avisa isso na tela;
+- descarta vagas que não são de TI (ex.: "Estágio para Direito", "Desenvolvedor de Negócios");
 - atualiza as que já existem e **remove as que saíram do ar** (nunca mexe nas vagas de outras fontes);
 - só aceita links `http`/`https` e mostra sempre a fonte e o botão para a vaga original.
 
