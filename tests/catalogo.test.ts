@@ -63,6 +63,40 @@ describe("catálogo de cursos", () => {
   });
 });
 
+describe("cobertura por nível (o que alimenta o mini quadro de cursos nas vagas)", () => {
+  const ordem = { iniciante: 1, intermediario: 2, avancado: 3 } as const;
+  const alcance = (c: (typeof CURSOS)[number], slug: string) =>
+    Math.max(0, ...c.habilidades.filter(([s]) => s === slug).map(([, n]) => ordem[n]));
+
+  it("toda habilidade tem pelo menos 3 cursos gratuitos", () => {
+    for (const h of HABILIDADES) {
+      const n = CURSOS.filter((c) => c.gratuito && alcance(c, h.slug) > 0).length;
+      expect(n, `${h.slug}: só ${n} gratuitos`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("toda habilidade tem pelo menos 2 cursos gratuitos que chegam ao intermediário", () => {
+    for (const h of HABILIDADES) {
+      const n = CURSOS.filter((c) => c.gratuito && alcance(c, h.slug) >= 2).length;
+      expect(n, `${h.slug}: só ${n} gratuitos até o intermediário`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("toda habilidade tem pelo menos 1 curso que chega ao avançado", () => {
+    for (const h of HABILIDADES) {
+      const n = CURSOS.filter((c) => alcance(c, h.slug) >= 3).length;
+      expect(n, `${h.slug}: nenhum curso avançado`).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it("toda habilidade tem pelo menos 1 curso pago que chega ao intermediário", () => {
+    for (const h of HABILIDADES) {
+      const n = CURSOS.filter((c) => !c.gratuito && alcance(c, h.slug) >= 2).length;
+      expect(n, `${h.slug}: nenhum pago até o intermediário`).toBeGreaterThanOrEqual(1);
+    }
+  });
+});
+
 describe("vagas de exemplo", () => {
   it("só pedem habilidades que existem", () => {
     for (const v of VAGAS) for (const [slug] of v.requisitos) expect(slugs.has(slug), `${v.titulo}: ${slug}`).toBe(true);

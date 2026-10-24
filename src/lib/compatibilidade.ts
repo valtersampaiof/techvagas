@@ -124,6 +124,45 @@ function pontuar(curso: CursoCandidato, lacuna: Lacuna, todas: Lacuna[]): number
   return pontos;
 }
 
+/**
+ * Os melhores cursos GRATUITOS de uma habilidade, para o mini quadro que aparece ao passar o mouse
+ * num requisito. Prefere cursos que chegam ao nível pedido, de instituições diferentes (para não
+ * mostrar três cursos do mesmo lugar), e completa com os que ensinam a habilidade em nível menor
+ * se não houver o bastante.
+ */
+export function melhoresGratuitos(
+  cursos: CursoCandidato[],
+  requisito: Requisito,
+  nivelAtual: string | null,
+  quantidade = 3,
+): CursoCandidato[] {
+  const lacuna: Lacuna = { ...requisito, situacao: nivelAtual === null ? "ausente" : "nivel_abaixo", nivelAtual };
+  const gratuitos = cursos.filter((c) => c.gratuito && c.habilidades.some((h) => h.slug === requisito.slug));
+  const nota = (c: CursoCandidato) => pontuar(c, lacuna, [lacuna]);
+
+  const atingem = gratuitos.filter((c) => ensina(c, lacuna)).sort((a, b) => nota(b) - nota(a));
+  const abaixo = gratuitos
+    .filter((c) => !ensina(c, lacuna))
+    .sort((a, b) => nivelEnsinadoDe(b, requisito.slug) - nivelEnsinadoDe(a, requisito.slug) || nota(b) - nota(a));
+
+  const ordenados = [...atingem, ...abaixo];
+  const escolhidos: CursoCandidato[] = [];
+  const instituicoes = new Set<string>();
+  for (const c of ordenados) {
+    if (escolhidos.length === quantidade) break;
+    if (!instituicoes.has(c.instituicao)) {
+      escolhidos.push(c);
+      instituicoes.add(c.instituicao);
+    }
+  }
+  // Se não houver instituições diferentes o bastante, completa com os melhores que sobraram.
+  for (const c of ordenados) {
+    if (escolhidos.length === quantidade) break;
+    if (!escolhidos.includes(c)) escolhidos.push(c);
+  }
+  return escolhidos;
+}
+
 export function recomendarCursos(lacunas: Lacuna[], cursos: CursoCandidato[]): Recomendacoes {
   const porLacuna: RecomendacaoDaLacuna[] = lacunas.map((lacuna) => {
     const candidatos = cursos

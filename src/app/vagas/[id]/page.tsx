@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { calcularCompatibilidade, recomendarCursos, type Lacuna } from "@/lib/compatibilidade";
+import { calcularCompatibilidade, melhoresGratuitos, recomendarCursos, type Lacuna } from "@/lib/compatibilidade";
 import { listarCursosCandidatos } from "@/lib/cursos";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
 import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO } from "@/lib/rotulos";
 import { usuarioAtual } from "@/lib/sessao";
 import { CartaoCurso } from "@/components/CartaoCurso";
+import { RequisitoComCursos } from "@/components/RequisitoComCursos";
 import { SeloCompatibilidade } from "@/components/SeloCompatibilidade";
 
 type Props = { params: Promise<{ id: string }> };
@@ -40,6 +41,22 @@ export default async function PaginaDaVaga({ params }: Props) {
   // Sem perfil, mostramos cursos para todos os requisitos da vaga.
   const lacunas: Lacuna[] = compat.lacunas;
   const rec = recomendarCursos(lacunas, cursos);
+
+  // Mini quadro de cursos gratuitos de cada requisito (aparece ao passar o mouse no nome da habilidade).
+  const cursosDoQuadro = new Map(
+    vaga.requisitos.map((r) => {
+      const nivelAtual = habilidades.find((h) => h.slug === r.slug)?.nivel ?? null;
+      const gratuitos = melhoresGratuitos(cursos, r, nivelAtual).map((c) => ({
+        id: c.id,
+        titulo: c.titulo,
+        instituicao: c.instituicao,
+        link: c.link,
+        cargaHoraria: c.cargaHoraria,
+        certificado: c.certificado,
+      }));
+      return [r.slug, gratuitos] as const;
+    }),
+  );
 
   return (
     <div className="space-y-8">
@@ -109,14 +126,18 @@ export default async function PaginaDaVaga({ params }: Props) {
             para comparar com esta vaga.
           </p>
         )}
-        <ul className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+        <p className="mt-3 text-xs text-slate-500">
+          Dica: passe o mouse (ou toque) no nome de uma habilidade para ver cursos gratuitos dela, sem sair desta página.
+        </p>
+        <ul className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
           {vaga.requisitos.map((r) => {
             const lacuna = compat.lacunas.find((l) => l.slug === r.slug);
             const tem = temPerfil && !lacuna;
             return (
               <li key={r.slug} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
                 <span>
-                  <strong>{r.nome}</strong> · nível {rotuloNivel(r.nivelMinimo).toLowerCase()}{" "}
+                  <RequisitoComCursos nome={r.nome} slug={r.slug} cursos={cursosDoQuadro.get(r.slug) ?? []} /> · nível{" "}
+                  {rotuloNivel(r.nivelMinimo).toLowerCase()}{" "}
                   <span className="text-slate-500">({r.obrigatorio ? "obrigatório" : "desejável"})</span>
                 </span>
                 {temPerfil && (

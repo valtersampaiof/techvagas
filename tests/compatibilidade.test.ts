@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calcularCompatibilidade,
+  melhoresGratuitos,
   recomendarCursos,
   type CursoCandidato,
   type Requisito,
@@ -182,5 +183,81 @@ describe("recomendarCursos: dedicação e atalho", () => {
       curso(2, { habilidades: [{ slug: "seguranca", nivelEnsinado: "iniciante" }, { slug: "ingles", nivelEnsinado: "iniciante" }] }),
     ]);
     expect(rec.maisUteis.map((m) => m.curso.id)).toEqual([2, 1]);
+  });
+});
+
+describe("melhoresGratuitos (mini quadro de cursos)", () => {
+  const python: Requisito = { slug: "python", nome: "Python", nivelMinimo: "iniciante", obrigatorio: true };
+  const ensinaPython = (nivel: string, extra: Record<string, unknown> = {}) => ({
+    habilidades: [{ slug: "python", nivelEnsinado: nivel, principal: true }],
+    ...extra,
+  });
+
+  it("só devolve cursos gratuitos que ensinam a habilidade", () => {
+    const r = melhoresGratuitos(
+      [
+        curso(1, ensinaPython("iniciante", { gratuito: false })),
+        curso(2, ensinaPython("iniciante")),
+        curso(3, { habilidades: [{ slug: "java", nivelEnsinado: "iniciante", principal: true }] }),
+      ],
+      python,
+      null,
+    );
+    expect(r.map((c) => c.id)).toEqual([2]);
+  });
+
+  it("devolve no máximo 3 e prefere instituições diferentes", () => {
+    const r = melhoresGratuitos(
+      [
+        curso(1, ensinaPython("iniciante", { instituicao: "A", certificado: true })),
+        curso(2, ensinaPython("iniciante", { instituicao: "A", certificado: true })),
+        curso(3, ensinaPython("iniciante", { instituicao: "A" })),
+        curso(4, ensinaPython("iniciante", { instituicao: "B" })),
+        curso(5, ensinaPython("iniciante", { instituicao: "C" })),
+      ],
+      python,
+      null,
+    );
+    expect(r).toHaveLength(3);
+    expect(new Set(r.map((c) => c.instituicao))).toEqual(new Set(["A", "B", "C"]));
+  });
+
+  it("completa com cursos da mesma instituição quando não há outras", () => {
+    const r = melhoresGratuitos(
+      [curso(1, ensinaPython("iniciante", { instituicao: "A" })), curso(2, ensinaPython("iniciante", { instituicao: "A" }))],
+      python,
+      null,
+    );
+    expect(r.map((c) => c.id).sort()).toEqual([1, 2]);
+  });
+
+  it("prefere os que chegam ao nível pedido e só depois os que ensinam em nível menor", () => {
+    const intermediario: Requisito = { ...python, nivelMinimo: "intermediario" };
+    const r = melhoresGratuitos(
+      [
+        curso(1, ensinaPython("iniciante", { instituicao: "A", certificado: true })),
+        curso(2, ensinaPython("intermediario", { instituicao: "B" })),
+      ],
+      intermediario,
+      null,
+    );
+    expect(r.map((c) => c.id)).toEqual([2, 1]);
+  });
+
+  it("dá preferência a curso dedicado à habilidade e com certificado", () => {
+    const r = melhoresGratuitos(
+      [
+        curso(1, { habilidades: [{ slug: "java", nivelEnsinado: "iniciante", principal: true }, { slug: "python", nivelEnsinado: "iniciante" }], instituicao: "A" }),
+        curso(2, { ...ensinaPython("iniciante"), instituicao: "B", certificado: true }),
+      ],
+      python,
+      null,
+      1,
+    );
+    expect(r.map((c) => c.id)).toEqual([2]);
+  });
+
+  it("devolve lista vazia se não houver nenhum curso gratuito da habilidade", () => {
+    expect(melhoresGratuitos([curso(1, ensinaPython("iniciante", { gratuito: false }))], python, null)).toEqual([]);
   });
 });

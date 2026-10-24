@@ -26,7 +26,7 @@ Outros comandos: `npm test` (testes), `npm run lint`, `npm run build`.
 | --- | --- |
 | `/` | Apresentação |
 | `/vagas` | Lista com filtros e % de compatibilidade (quando logado e com perfil) |
-| `/vagas/[id]` | Requisitos (✔ tem / ✘ falta) e cursos para cada lacuna |
+| `/vagas/[id]` | Requisitos (✔ tem / ✘ falta) e cursos para cada lacuna. **Passe o mouse (ou toque) no nome de uma habilidade** para ver até 3 cursos gratuitos dela num mini quadro, sem sair da página |
 | `/cursos` | Catálogo com filtros (gratuito/pago, certificado, nível, habilidade) |
 | `/perfil` | Envio do currículo em PDF, revisão e edição das habilidades |
 | `/entrar`, `/cadastrar` | Conta de estudante (e-mail e senha) |
@@ -92,12 +92,18 @@ Para incluir outra fonte, crie um arquivo em `src/lib/vagas/fontes/` que cumpra 
 - **Cursos**: para cada lacuna, o melhor gratuito e o melhor pago. A ordem considera, nesta ordem de peso: o curso ser
   dedicado à habilidade, o nível do estudante, o certificado e quantas outras lacunas ele cobre. Cursos que resolvem
   várias lacunas de uma vez aparecem num bloco de atalho.
+- **Mini quadro de cursos** (`src/components/RequisitoComCursos.tsx`): abre ao passar o mouse, tocar ou focar com o
+  teclado; fecha com Esc ou clicando fora; os links abrem em outra aba. Os cursos vêm de `melhoresGratuitos`
+  (`src/lib/compatibilidade.ts`): só gratuitos, de instituições diferentes, preferindo os que chegam ao nível pedido.
+- **Catálogo** (`src/lib/dados/cursos*.ts`): um teste (`tests/catalogo.test.ts`) garante que toda habilidade tem pelo
+  menos 3 cursos gratuitos, 2 gratuitos até o intermediário, 1 curso avançado e 1 pago até o intermediário. Se você
+  adicionar uma habilidade nova, o teste avisa o que falta.
 - **Fonte de vagas** (`src/lib/fonte-de-vagas.ts`): interface `FonteDeVagas` que as páginas usam; lê o banco.
 
 ## Atenção antes de publicar
 
 - As **vagas de exemplo são fictícias** (`src/lib/dados/vagas.ts`).
-- Em `src/lib/dados/cursos.ts` e `cursos-extra.ts` (143 cursos, 27 habilidades), **gratuidade, preço, carga horária e
+- Em `src/lib/dados/cursos.ts`, `cursos-extra.ts` e `cursos-mais.ts` (277 cursos, 27 habilidades), **gratuidade, preço, carga horária e
   certificado precisam ser conferidos** no site de cada instituição. Vários links apontam para a página geral do
   provedor porque o endereço de cada curso muda.
 - Os requisitos das vagas reais são **estimados automaticamente** pelo texto do anúncio, e o site avisa isso na tela.

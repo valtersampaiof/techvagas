@@ -1,5 +1,6 @@
 import type { Nivel } from "../niveis";
 import { CURSOS_EXTRA } from "./cursos-extra";
+import { CURSOS_MAIS } from "./cursos-mais";
 
 export type CursoBase = {
   titulo: string;
@@ -564,4 +565,4 @@ const CURSOS_BASE: CursoBase[] = [
   },
 ];
 
-export const CURSOS: CursoBase[] = [...CURSOS_BASE, ...CURSOS_EXTRA];
+export const CURSOS: CursoBase[] = [...CURSOS_BASE, ...CURSOS_EXTRA, ...CURSOS_MAIS];
