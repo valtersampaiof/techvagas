@@ -25,9 +25,9 @@ Outros comandos: `npm test` (testes), `npm run lint`, `npm run build`.
 | Página | Função |
 | --- | --- |
 | `/` | Apresentação |
-| `/vagas` | Lista com filtros e % de compatibilidade (quando logado e com perfil) |
+| `/vagas` | Lista com filtros (tipo, modalidade, área, **estado e cidade**), % de compatibilidade (quando logado e com perfil) e paginação |
 | `/vagas/[id]` | Requisitos (✔ tem / ✘ falta) e cursos para cada lacuna. **Passe o mouse (ou toque) no nome de uma habilidade** para ver até 3 cursos gratuitos dela num mini quadro, sem sair da página |
-| `/cursos` | Catálogo com filtros (gratuito/pago, certificado, nível, habilidade) |
+| `/cursos` | Catálogo com busca por texto e filtros (habilidade, preço, nível em que começa, **até onde leva**, idioma, duração, certificado), ordenação e paginação |
 | `/perfil` | Envio do currículo em PDF, revisão e edição das habilidades |
 | `/entrar`, `/cadastrar` | Conta de estudante (e-mail e senha) |
 
@@ -92,6 +92,13 @@ Para incluir outra fonte, crie um arquivo em `src/lib/vagas/fontes/` que cumpra 
 - **Cursos**: para cada lacuna, o melhor gratuito e o melhor pago. A ordem considera, nesta ordem de peso: o curso ser
   dedicado à habilidade, o nível do estudante, o certificado e quantas outras lacunas ele cobre. Cursos que resolvem
   várias lacunas de uma vez aparecem num bloco de atalho.
+- **Filtro de estado e cidade** (`src/lib/localizacao.ts`): cada fonte escreve o local de um jeito ("Curitiba, Paraná",
+  "São Paulo, Estado de São Paulo", "Renascença, Belo Horizonte"). `interpretarLocal` entende esses formatos e guarda
+  cidade, sigla do estado e a cidade sem acentos; a busca por cidade ignora acentos e maiúsculas. Ao filtrar por um
+  lugar, as vagas de lá vêm primeiro e as **remotas** continuam aparecendo depois (dá para esconder). Vagas "Brasil" ou
+  sem local claro não entram no filtro de cidade/estado. Se o perfil tem cidade, aparece o botão "usar minha cidade".
+- **Idioma dos cursos** (`src/lib/filtrar-cursos.ts`): é uma **estimativa** feita por sinais (endereço `/pt-br/`,
+  menção a português, título em português, instituição brasileira). Confira no site do curso.
 - **Mini quadro de cursos** (`src/components/RequisitoComCursos.tsx`): abre ao passar o mouse, tocar ou focar com o
   teclado; fecha com Esc ou clicando fora; os links abrem em outra aba. Os cursos vêm de `melhoresGratuitos`
   (`src/lib/compatibilidade.ts`): só gratuitos, de instituições diferentes, preferindo os que chegam ao nível pedido.

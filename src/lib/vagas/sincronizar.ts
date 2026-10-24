@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { HABILIDADES } from "../dados/habilidades";
 import { FONTES } from "./fontes";
 import { normalizar } from "../extrair-habilidades";
+import { dadosDeLocalizacao } from "../localizacao";
 import { normalizarVaga } from "./normalizar";
 import type { FonteExterna } from "./tipos";
 
@@ -61,6 +62,7 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
           titulo: v.titulo,
           empresa: v.empresa,
           cidade: v.cidade,
+          ...dadosDeLocalizacao(v.cidade),
           modalidade: v.modalidade,
           tipo: v.tipo,
           area: v.area,

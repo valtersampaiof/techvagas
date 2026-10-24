@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { HABILIDADES } from "../src/lib/dados/habilidades";
 import { CURSOS } from "../src/lib/dados/cursos";
 import { VAGAS } from "../src/lib/dados/vagas";
+import { dadosDeLocalizacao } from "../src/lib/localizacao";
 
 const db = new PrismaClient();
 
@@ -45,6 +46,7 @@ async function main() {
     await db.vaga.create({
       data: {
         ...dados,
+        ...dadosDeLocalizacao(dados.cidade),
         requisitos: {
           create: requisitos.map(([slug, nivelMinimo, obrigatorio]) => ({
             habilidadeId: idDe(slug),
@@ -55,6 +57,10 @@ async function main() {
       },
     });
   }
+
+  // Vagas reais já sincronizadas antes dos filtros de cidade/estado ainda não têm a localização interpretada.
+  const semLocalizacao = await db.vaga.findMany({ where: { cidadeChave: "", uf: "", cidadeNome: "" }, select: { id: true, cidade: true } });
+  for (const v of semLocalizacao) await db.vaga.update({ where: { id: v.id }, data: dadosDeLocalizacao(v.cidade) });
 
   console.log(`Habilidades: ${HABILIDADES.length} · Cursos: ${CURSOS.length} · Vagas: ${VAGAS.length}`);
 }

@@ -18,3 +18,9 @@ export const ROTULO_ORIGEM: Record<string, string> = {
   remotive: "Remotive",
   github: "Comunidades no GitHub",
 };
+
+/** "Recife, PE" quando a localização foi interpretada; senão, o texto original da fonte. */
+export function rotuloDoLocal(vaga: { cidade: string; cidadeNome: string; uf: string }): string {
+  if (vaga.cidadeNome) return vaga.uf ? `${vaga.cidadeNome}, ${vaga.uf}` : vaga.cidadeNome;
+  return vaga.cidade;
+}

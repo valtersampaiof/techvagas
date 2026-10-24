@@ -48,7 +48,11 @@ model Vaga {
   id          Int    @id @default(autoincrement())
   titulo      String
   empresa     String
-  cidade      String
+  cidade      String // texto como veio da fonte
+  // Localização já interpretada, para filtrar: cidade, sigla do estado e a cidade sem acentos/maiúsculas.
+  cidadeNome   String @default("")
+  uf           String @default("")
+  cidadeChave  String @default("")
   modalidade  String // "presencial" | "hibrido" | "remoto"
   tipo        String // "estagio" | "trainee" | "junior"
   area        String

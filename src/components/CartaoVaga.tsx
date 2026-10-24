@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { VagaComRequisitos } from "@/lib/fonte-de-vagas";
-import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO } from "@/lib/rotulos";
+import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO, rotuloDoLocal } from "@/lib/rotulos";
 import { SeloCompatibilidade } from "./SeloCompatibilidade";
 
 export function CartaoVaga({ vaga, percentual }: { vaga: VagaComRequisitos; percentual: number | null }) {
@@ -13,7 +13,7 @@ export function CartaoVaga({ vaga, percentual }: { vaga: VagaComRequisitos; perc
         <div>
           <h3 className="font-semibold text-slate-900">{vaga.titulo}</h3>
           <p className="text-sm text-slate-600">
-            {vaga.empresa} · {vaga.cidade}
+            {vaga.empresa} · {rotuloDoLocal(vaga)}
           </p>
         </div>
         {percentual !== null && <SeloCompatibilidade percentual={percentual} />}

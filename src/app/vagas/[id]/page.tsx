@@ -5,7 +5,7 @@ import { calcularCompatibilidade, melhoresGratuitos, recomendarCursos, type Lacu
 import { listarCursosCandidatos } from "@/lib/cursos";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
-import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO } from "@/lib/rotulos";
+import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO, rotuloDoLocal } from "@/lib/rotulos";
 import { usuarioAtual } from "@/lib/sessao";
 import { CartaoCurso } from "@/components/CartaoCurso";
 import { RequisitoComCursos } from "@/components/RequisitoComCursos";
@@ -66,7 +66,7 @@ export default async function PaginaDaVaga({ params }: Props) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">{vaga.titulo}</h1>
-            <p className="text-slate-600">{vaga.empresa} · {vaga.cidade}</p>
+            <p className="text-slate-600">{vaga.empresa} · {rotuloDoLocal(vaga)}</p>
           </div>
           {temPerfil && !semRequisitos && <SeloCompatibilidade percentual={compat.percentual} />}
         </div>
