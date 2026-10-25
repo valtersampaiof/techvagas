@@ -184,6 +184,11 @@ Cuidados que já estão no código:
 - **Cursos**: para cada lacuna, o melhor gratuito e o melhor pago. A ordem considera, nesta ordem de peso: o curso ser
   dedicado à habilidade, o nível do estudante, o certificado e quantas outras lacunas ele cobre. Cursos que resolvem
   várias lacunas de uma vez aparecem num bloco de atalho.
+- **Buscas e filtros exatos** (`src/lib/busca.ts`, `src/lib/filtrar-cursos.ts`): a busca por texto vale por palavra inteira
+  ("java" não traz "javascript"), ignora acentos e desconsidera frases repetidas nas descrições ("Em inglês", "sem
+  certificado"). O filtro de habilidade só traz cursos que ensinam aquilo de verdade (é a habilidade principal ou leva ao
+  menos ao nível intermediário), com os feitos para ela primeiro. "Inglês" só é habilidade de curso que ensina inglês; o
+  idioma em que o curso é dado tem filtro próprio.
 - **Filtro de estado e cidade** (`src/lib/localizacao.ts`): cada fonte escreve o local de um jeito ("Curitiba, Paraná",
   "São Paulo, Estado de São Paulo", "Renascença, Belo Horizonte"). `interpretarLocal` entende esses formatos e guarda
   cidade, sigla do estado e a cidade sem acentos; a busca por cidade ignora acentos e maiúsculas. Ao filtrar por um

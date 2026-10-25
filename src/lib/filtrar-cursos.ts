@@ -1,4 +1,4 @@
-import { normalizar } from "./extrair-habilidades";
+import { correspondeABusca, palavrasDaBusca, textoParaBusca } from "./busca";
 import type { CursoCandidato } from "./compatibilidade";
 import { pesoNivel } from "./niveis";
 
@@ -73,17 +73,30 @@ export function alcanceDoCurso(c: CursoCandidato, habilidade?: string): number {
   return Math.max(0, ...c.habilidades.filter((h) => !habilidade || h.slug === habilidade).map((h) => pesoNivel(h.nivelEnsinado)));
 }
 
+/** A habilidade é a principal do curso (a que ele existe para ensinar)? */
+export function ehHabilidadePrincipal(c: Pick<CursoCandidato, "habilidades">, slug: string): boolean {
+  const i = c.habilidades.findIndex((h) => h.slug === slug);
+  return i !== -1 && (c.habilidades[i].principal ?? i === 0);
+}
+
+/**
+ * O curso é DE VERDADE sobre a habilidade? Sim, se ela é a principal dele ou se ele a leva ao menos ao nível
+ * intermediário. Citar a habilidade de passagem (uma aula de SQL num curso de lógica) não conta: o filtro por habilidade
+ * deve trazer o que a pessoa procura, não tudo o que tangencia o assunto.
+ */
+export function ensinaDeVerdade(c: Pick<CursoCandidato, "habilidades">, slug: string): boolean {
+  const h = c.habilidades.find((x) => x.slug === slug);
+  return !!h && (ehHabilidadePrincipal(c, slug) || pesoNivel(h.nivelEnsinado) >= 2);
+}
+
 export function filtrarCursos(cursos: CursoCandidato[], f: FiltrosDeCursos): CursoCandidato[] {
-  const palavras = f.q ? normalizar(f.q).split(/\s+/).filter(Boolean) : [];
+  const palavras = f.q ? palavrasDaBusca(f.q) : [];
   const duracao = f.duracao ? DURACOES[f.duracao] : undefined;
   const alcanceMinimo = f.alcance ? pesoNivel(f.alcance) : 0;
 
   return cursos.filter((c) => {
-    if (palavras.length > 0) {
-      const texto = normalizar(`${c.titulo} ${c.instituicao} ${c.descricao}`);
-      if (!palavras.every((p) => texto.includes(p))) return false;
-    }
-    if (f.habilidade && !c.habilidades.some((h) => h.slug === f.habilidade)) return false;
+    if (palavras.length > 0 && !correspondeABusca(textoParaBusca(c.titulo, c.instituicao, c.descricao), palavras)) return false;
+    if (f.habilidade && !ensinaDeVerdade(c, f.habilidade)) return false;
     if (f.preco === "gratuito" && !c.gratuito) return false;
     if (f.preco === "pago" && c.gratuito) return false;
     if (f.nivel && c.nivel !== f.nivel) return false;
@@ -95,7 +108,7 @@ export function filtrarCursos(cursos: CursoCandidato[], f: FiltrosDeCursos): Cur
   });
 }
 
-export function ordenarCursos(cursos: CursoCandidato[], ordem?: string): CursoCandidato[] {
+export function ordenarCursos(cursos: CursoCandidato[], ordem?: string, habilidade?: string): CursoCandidato[] {
   const copia = [...cursos];
   const porTitulo = (a: CursoCandidato, b: CursoCandidato) => a.titulo.localeCompare(b.titulo, "pt-BR");
   switch (ordem) {
@@ -106,10 +119,12 @@ export function ordenarCursos(cursos: CursoCandidato[], ordem?: string): CursoCa
     case "az":
       return copia.sort(porTitulo);
     default:
-      // Relevância: gratuitos com certificado, depois gratuitos, depois pagos. Em empate, os em português
-      // primeiro e, por fim, ordem alfabética (neutra: o mais curto não é necessariamente o melhor).
+      // Relevância: com uma habilidade escolhida, primeiro os cursos feitos para ensiná-la. Depois, gratuitos com
+      // certificado, gratuitos e pagos. Em empate, os em português primeiro e, por fim, ordem alfabética (neutra: o mais
+      // curto não é necessariamente o melhor).
       return copia.sort(
         (a, b) =>
+          (habilidade ? Number(ehHabilidadePrincipal(b, habilidade)) - Number(ehHabilidadePrincipal(a, habilidade)) : 0) ||
           Number(b.gratuito) * 2 + Number(b.certificado) - (Number(a.gratuito) * 2 + Number(a.certificado)) ||
           Number(idiomaDoCurso(b) === "pt") - Number(idiomaDoCurso(a) === "pt") ||
           porTitulo(a, b),

@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { correspondeABusca, palavrasDaBusca, textoParaBusca } from "./busca";
 import { db } from "./db";
 import { normalizar } from "./extrair-habilidades";
 import type { Requisito } from "./compatibilidade";
@@ -171,9 +172,6 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
             contrato ? { contrato: { in: contratosDoFiltro(contrato) } } : {},
             modalidade ? { modalidade } : {},
             area ? { area } : {},
-            busca
-              ? { OR: [{ titulo: { contains: busca } }, { empresa: { contains: busca } }, { descricao: { contains: busca } }] }
-              : {},
             // Com estado/cidade, as vagas remotas também servem (a menos que a pessoa peça só a região).
             temRegiao ? (somenteRegiao ? regiao : { OR: [regiao, { modalidade: "remoto" }] }) : {},
             // Vale o teto da faixa ("R$ 1.500 a R$ 1.900" serve para quem quer 1.800+); "a partir de" vale o piso.
@@ -187,7 +185,13 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
         include: incluirRequisitos,
         orderBy: [{ publicadaEm: { sort: "desc", nulls: "last" } }, { id: "asc" }],
       });
-      return vagas.map((v) => converter(v, habilidades));
+      // A busca é feita aqui e não no banco: o banco não ignora acentos nem separa "java" de "javascript".
+      const palavras = busca ? palavrasDaBusca(busca) : [];
+      const achadas =
+        palavras.length === 0
+          ? vagas
+          : vagas.filter((v) => correspondeABusca(textoParaBusca(v.titulo, v.empresa, v.descricao), palavras));
+      return achadas.map((v) => converter(v, habilidades));
     },
 
     async obter(id) {

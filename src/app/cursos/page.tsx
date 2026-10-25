@@ -22,7 +22,7 @@ export default async function PaginaDeCursos({ searchParams }: { searchParams: P
     db.habilidade.findMany({ orderBy: [{ area: "asc" }, { nome: "asc" }], select: { slug: true, nome: true } }),
   ]);
 
-  const filtrados = ordenarCursos(filtrarCursos(todos, filtros), filtros.ordem);
+  const filtrados = ordenarCursos(filtrarCursos(todos, filtros), filtros.ordem, filtros.habilidade);
   const pagina = paginar(filtrados, numeroDaPagina(paginaTexto));
   const temFiltro = Object.entries(filtros).some(([chave, valor]) => chave !== "ordem" && !!valor);
 

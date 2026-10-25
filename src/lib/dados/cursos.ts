@@ -577,4 +577,16 @@ function comEtiquetasExtras(curso: CursoBase): CursoBase {
   return { ...curso, habilidades: [...primeiras, ...curso.habilidades, ...demais] };
 }
 
-export const CURSOS: CursoBase[] = [...CURSOS_BASE, ...CURSOS_EXTRA, ...CURSOS_MAIS, ...CURSOS_PLENO_SENIOR, ...CURSOS_GESTAO].map(comEtiquetasExtras);
+/**
+ * "Inglês" é habilidade só de curso que ENSINA inglês (nele, é sempre a primeira). Muitos cursos têm a etiqueta
+ * "ingles" no fim da lista só por serem dados em inglês; isso fazia o filtro "Inglês" e a recomendação para vagas que
+ * pedem inglês trazerem cursos de Kubernetes, Git etc. O idioma do curso já tem filtro próprio (`idiomaDoCurso`).
+ */
+function semInglesDeIdioma(curso: CursoBase): CursoBase {
+  if (curso.habilidades[0]?.[0] === "ingles") return curso;
+  return { ...curso, habilidades: curso.habilidades.filter(([slug]) => slug !== "ingles") };
+}
+
+export const CURSOS: CursoBase[] = [...CURSOS_BASE, ...CURSOS_EXTRA, ...CURSOS_MAIS, ...CURSOS_PLENO_SENIOR, ...CURSOS_GESTAO]
+  .map(comEtiquetasExtras)
+  .map(semInglesDeIdioma);

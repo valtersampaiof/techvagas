@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CursoCandidato } from "@/lib/compatibilidade";
-import { alcanceDoCurso, filtrarCursos, idiomaDoCurso, ordenarCursos } from "@/lib/filtrar-cursos";
+import { alcanceDoCurso, ehHabilidadePrincipal, ensinaDeVerdade, filtrarCursos, idiomaDoCurso, ordenarCursos } from "@/lib/filtrar-cursos";
 
 const c = (id: number, extra: Partial<CursoCandidato> = {}): CursoCandidato => ({
   id,
@@ -80,8 +80,38 @@ describe("filtrarCursos", () => {
     expect(ids(filtrarCursos(lista, { nivel: "intermediario" }))).toEqual([3]);
   });
 
-  it("habilidade", () => {
-    expect(ids(filtrarCursos(lista, { habilidade: "redes" }))).toEqual([3, 4]);
+  it("habilidade: não traz curso que só cita a habilidade de passagem", () => {
+    // O curso de Linux (4) toca em redes só no nível iniciante, como assunto secundário.
+    expect(ids(filtrarCursos(lista, { habilidade: "redes" }))).toEqual([3]);
+    expect(ids(filtrarCursos(lista, { habilidade: "linux" }))).toEqual([4]);
+  });
+
+  it("habilidade secundária vale quando o curso leva até o nível intermediário", () => {
+    const curso = c(9, { habilidades: [{ slug: "docker", nivelEnsinado: "intermediario" }, { slug: "linux", nivelEnsinado: "intermediario" }] });
+    expect(ids(filtrarCursos([curso], { habilidade: "linux" }))).toEqual([9]);
+  });
+
+  it("habilidade usa a marcação de principal quando ela existe", () => {
+    const curso = c(9, { habilidades: [{ slug: "git", nivelEnsinado: "iniciante", principal: false }, { slug: "ingles", nivelEnsinado: "iniciante", principal: true }] });
+    expect(ehHabilidadePrincipal(curso, "ingles")).toBe(true);
+    expect(ehHabilidadePrincipal(curso, "git")).toBe(false);
+    expect(ensinaDeVerdade(curso, "git")).toBe(false);
+  });
+
+  it("busca: 'java' não traz 'javascript' e 'sql' não traz 'mysql'", () => {
+    const cursos = [c(1, { titulo: "JavaScript moderno" }), c(2, { titulo: "Java para iniciantes" }), c(3, { titulo: "MySQL na prática" }), c(4, { titulo: "SQL básico" })];
+    expect(ids(filtrarCursos(cursos, { q: "java" }))).toEqual([2]);
+    expect(ids(filtrarCursos(cursos, { q: "sql" }))).toEqual([4]);
+    expect(ids(filtrarCursos(cursos, { q: "javascript" }))).toEqual([1]);
+  });
+
+  it("busca: frases de idioma e certificado das descrições não contam como assunto", () => {
+    const cursos = [
+      c(1, { titulo: "Kubernetes na prática", descricao: "Orquestração de contêineres. Em inglês, com legendas em português. Sem certificado." }),
+      c(2, { titulo: "Inglês para Tecnologia", descricao: "Vocabulário técnico." }),
+    ];
+    expect(ids(filtrarCursos(cursos, { q: "inglês" }))).toEqual([2]);
+    expect(ids(filtrarCursos(cursos, { q: "certificado" }))).toEqual([]);
   });
 
   it("'chega até' considera a habilidade escolhida, não as outras", () => {
@@ -141,6 +171,14 @@ describe("ordenarCursos", () => {
       c(3, { titulo: "B course", certificado: true, instituicao: "Alura" }), // instituição brasileira
     ];
     expect(ids(ordenarCursos(mista))).toEqual([3, 2, 1]);
+  });
+  it("relevância com habilidade escolhida: os cursos feitos para ensiná-la vêm antes", () => {
+    const cursos = [
+      c(1, { titulo: "A", gratuito: true, certificado: true, habilidades: [{ slug: "docker", nivelEnsinado: "iniciante" }, { slug: "linux", nivelEnsinado: "intermediario" }] }),
+      c(2, { titulo: "B", gratuito: false, habilidades: [{ slug: "linux", nivelEnsinado: "intermediario" }] }),
+    ];
+    expect(ids(ordenarCursos(cursos, undefined, "linux"))).toEqual([2, 1]);
+    expect(ids(ordenarCursos(cursos))).toEqual([1, 2]);
   });
   it("menor e maior carga horária", () => {
     expect(ids(ordenarCursos(lista, "menor"))).toEqual([1, 4, 3, 2]);

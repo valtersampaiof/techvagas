@@ -34,6 +34,18 @@ describe("catálogo de cursos", () => {
     for (const c of CURSOS) expect(new Set(c.habilidades.map(([s]) => s)).size, c.titulo).toBe(c.habilidades.length);
   });
 
+  it("'inglês' é habilidade só de curso que ENSINA inglês (ser dado em inglês não conta)", () => {
+    const comIngles = CURSOS.filter((c) => c.habilidades.some(([s]) => s === "ingles"));
+    expect(comIngles.length).toBeGreaterThanOrEqual(10);
+    // Se for habilidade do curso, é a principal; e o título ou a descrição falam de inglês/idioma.
+    for (const c of comIngles) {
+      expect(c.habilidades[0][0], c.titulo).toBe("ingles");
+      expect(`${c.titulo} ${c.descricao}`, c.titulo).toMatch(/ingl[eê]s|english|toeic|ielts|duolingo/i);
+    }
+    const kubernetes = CURSOS.find((c) => c.titulo === "Certified Kubernetes Administrator (CKA)")!;
+    expect(kubernetes.habilidades.some(([s]) => s === "ingles")).toBe(false);
+  });
+
   it("os arquivos novos só têm cursos novos (nenhum repete título de outro arquivo)", () => {
     const novos = [...CURSOS_PLENO_SENIOR, ...CURSOS_GESTAO];
     const todos = new Map<string, number>();
