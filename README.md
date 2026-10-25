@@ -40,6 +40,7 @@ ele busca vagas reais, guarda no banco e **esconde as de exemplo** assim que hou
 
 | Fonte | Precisa de chave? | O que traz |
 | --- | --- | --- |
+| **Sites de empresas** (Greenhouse, Lever, Ashby) | Não | Vagas direto da página de carreiras de 19 empresas brasileiras de tecnologia e finanças (Stone, BTG Pactual, C6 Bank, Inter, XP, QuintoAndar, Nubank, CI&T...). **API pública e documentada** das três plataformas, feita para mostrar vagas em outros sites. Como são bancos e fintechs com todo tipo de vaga, só entram as de cargo ou setor de tecnologia. Rende pouco (em outubro/2026: 455 vagas lidas, 5 para iniciantes), mas são vagas que as outras fontes não trazem, e o número sobe na época dos programas de estágio |
 | **Gupy** | Não | A maior plataforma de recrutamento do Brasil, com muito estágio e trainee. **Não é API oficial**: usa o mesmo endereço da busca do site `portal.gupy.io` (o `robots.txt` permite). Traz a descrição completa da vaga, então a leitura de requisitos é bem melhor. Em outubro/2026: 282 recebidas, 128 aproveitadas |
 | **Adzuna** | Sim (gratuita) | Vagas do Brasil de vários sites. É a fonte principal; testada com dados reais (227 vagas recebidas, 178 aproveitadas numa execução) |
 | **Jooble** | Sim (gratuita) | Funciona (testado com chave real), mas o índice do Brasil é pequeno e quase só traz vagas sênior de bancos e indústrias: numa execução, 70 recebidas e nenhuma para iniciante de TI. É só um complemento |
@@ -63,7 +64,7 @@ fonte e leva de volta à página original. Se parar de funcionar, as outras font
 talentos", vagas com prazo de inscrição vencido e vagas sem prazo com mais de 6 meses.
 
 Quando a mesma vaga (mesmo cargo na mesma empresa) vem de duas fontes, fica só a da fonte que aparece primeiro na lista
-(`src/lib/vagas/fontes/index.ts`: Gupy, Adzuna, Jooble, Remotive, GitHub).
+(`src/lib/vagas/fontes/index.ts`: sites de empresas, Gupy, Adzuna, Jooble, Remotive, GitHub).
 
 O que o comando faz com cada vaga:
 
@@ -81,6 +82,15 @@ O que o comando faz com cada vaga:
 
 Rode o comando de vez em quando (por exemplo, uma vez por dia). A Remotive pede que não se abuse das consultas.
 Uma fonte que falhar ou estiver sem chave não impede as outras: o resumo no fim mostra o que aconteceu com cada uma.
+
+**Incluir outra empresa** nos sites de empresas: descubra em qual plataforma ela publica (o endereço da página de carreiras
+é `boards.greenhouse.io/NOME`, `jobs.lever.co/NOME` ou `jobs.ashbyhq.com/NOME`) e acrescente uma linha em `EMPRESAS`
+(`src/lib/vagas/fontes/carreiras.ts`). Cada empresa é uma fonte separada: se a página de uma falhar, as vagas das outras
+não são afetadas. A vaga mostra "Site da empresa" como fonte.
+
+**Sites que avaliei e não usei:** LinkedIn, Indeed, Glassdoor, Catho, Vagas.com e InfoJobs não oferecem API pública
+para isso, e a leitura automática das páginas costuma ser vedada pelos termos de uso (confira antes de tentar). O Trampos é quase todo de marketing e criação (10
+vagas de TI) e o Programathor só tinha 32 vagas abertas, 3 para iniciantes, sem API. Vale rever se algum deles abrir uma API.
 
 Para incluir outra fonte, crie um arquivo em `src/lib/vagas/fontes/` que cumpra a interface `FonteExterna`
 (`src/lib/vagas/tipos.ts`) e acrescente-o em `src/lib/vagas/fontes/index.ts`.

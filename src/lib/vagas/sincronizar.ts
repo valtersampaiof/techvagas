@@ -7,6 +7,7 @@ import { normalizarVaga } from "./normalizar";
 import type { FonteExterna } from "./tipos";
 
 export type ResultadoDaFonte = {
+  origem: string;
   rotulo: string;
   situacao: "ok" | "pulada" | "erro";
   detalhe?: string;
@@ -30,7 +31,7 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
   const origensAnteriores: string[] = [];
 
   for (const fonte of fontes) {
-    const base = { rotulo: fonte.rotulo, recebidas: 0, salvas: 0, descartadas: 0 };
+    const base = { origem: fonte.origem, rotulo: fonte.rotulo, recebidas: 0, salvas: 0, descartadas: 0 };
 
     const motivo = fonte.indisponivel();
     if (motivo) {
@@ -90,10 +91,10 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
         });
       }
 
-      // Vagas dessa fonte que não apareceram mais saíram do ar. Só limpa se a busca trouxe algo, para uma falha
-      // silenciosa da fonte não apagar tudo. As que alguém SALVOU não são apagadas: ficam guardadas, marcadas
+      // Vagas dessa fonte que não apareceram mais saíram do ar. Só limpa se a busca trouxe algo aproveitável (ou se a
+      // fonte é uma lista completa), para uma falha silenciosa da fonte não apagar tudo. As que alguém SALVOU não são apagadas: ficam guardadas, marcadas
       // como inativas (somem das listagens, mas continuam em "vagas salvas", avisando que podem ter encerrado).
-      if (aceitas.length > 0) {
+      if (aceitas.length > 0 || fonte.listaCompleta) {
         const sumiram = { origem: fonte.origem, idExterno: { notIn: aceitas.map((v) => v.idExterno) } };
         await db.vaga.deleteMany({ where: { ...sumiram, salvaPor: { none: {} } } });
         await db.vaga.updateMany({ where: { ...sumiram, salvaPor: { some: {} } }, data: { ativa: false } });

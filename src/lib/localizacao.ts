@@ -69,6 +69,12 @@ export function interpretarLocal(texto: string): Local {
   const uf = ufDe(ultima);
   if (uf) partes = partes.slice(0, -1);
 
+  // "São Paulo" e "Rio de Janeiro" nomeiam estado e capital: sozinhos (ou só com o país), valem como a cidade.
+  if (uf && partes.length === 0) {
+    const capital = CAPITAL_POR_NOME.get(normalizar(ultima).trim());
+    if (capital && capital.uf === uf) return { cidade: capital.cidade, uf, chave: normalizar(capital.cidade).trim() };
+  }
+
   // Sem estado: se a última parte é uma capital ("Renascença, Belo Horizonte"), a cidade é ela.
   if (!uf) {
     const capital = CAPITAL_POR_NOME.get(normalizar(ultima).trim());

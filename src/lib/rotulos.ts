@@ -10,6 +10,9 @@ export const ROTULO_MODALIDADE: Record<string, string> = {
   remoto: "Remoto",
 };
 
+/** Vagas que vêm direto da página de carreiras da empresa têm origem `carreira:plataforma:empresa`. */
+export const PREFIXO_CARREIRA = "carreira:";
+
 export const ROTULO_ORIGEM: Record<string, string> = {
   exemplo: "Vaga de exemplo",
   adzuna: "Adzuna",
@@ -18,6 +21,11 @@ export const ROTULO_ORIGEM: Record<string, string> = {
   remotive: "Remotive",
   github: "Comunidades no GitHub",
 };
+
+export function rotuloDaOrigem(origem: string): string {
+  if (origem.startsWith(PREFIXO_CARREIRA)) return "Site da empresa";
+  return ROTULO_ORIGEM[origem] ?? origem;
+}
 
 /** "Recife, PE" quando a localização foi interpretada; senão, o texto original da fonte. */
 export function rotuloDoLocal(vaga: { cidade: string; cidadeNome: string; uf: string }): string {

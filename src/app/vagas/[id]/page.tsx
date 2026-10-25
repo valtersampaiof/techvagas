@@ -6,7 +6,7 @@ import { listarCursosCandidatos } from "@/lib/cursos";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
 import { formatarPublicacao, formatarSalario } from "@/lib/formatar";
-import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO, rotuloDoLocal } from "@/lib/rotulos";
+import { ROTULO_MODALIDADE, ROTULO_TIPO, rotuloDaOrigem, rotuloDoLocal } from "@/lib/rotulos";
 import { idsDasVagasSalvas } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
 import { BotaoSalvar } from "@/components/BotaoSalvar";
@@ -116,7 +116,7 @@ export default async function PaginaDaVaga({ params }: Props) {
               </a>
             )}
             <p className="text-xs text-slate-500">
-              Fonte: {ROTULO_ORIGEM[vaga.origem] ?? vaga.origem}
+              Fonte: {rotuloDaOrigem(vaga.origem)}
               {publicacao && ` · publicada ${publicacao}`}. Os requisitos foram
               identificados automaticamente pelo texto do anúncio; confira os detalhes na vaga original.
             </p>

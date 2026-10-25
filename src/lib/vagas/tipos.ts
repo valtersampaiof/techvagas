@@ -13,6 +13,8 @@ export type VagaExterna = {
   link: string;
   publicadaEm: Date | null;
   modalidade?: "remoto" | "hibrido" | "presencial";
+  /** Setor ou departamento da empresa (ex.: "Engenharia & Tecnologia"), quando a fonte informa. */
+  setor?: string;
   /** Etiquetas da própria fonte (ex.: "Júnior", "Remoto"). */
   rotulos?: string[];
   /** Salário informado pela própria fonte em campo próprio, já convertido para mensal. */
@@ -24,5 +26,11 @@ export interface FonteExterna {
   rotulo: string;
   /** null se pode rodar; senão, o motivo (ex.: chave de acesso ausente). */
   indisponivel(): string | null;
+  /**
+   * A fonte devolve TODAS as vagas atuais de um lugar (como a página de carreiras de uma empresa). Nesse caso, mesmo
+   * que nenhuma sirva para iniciantes de TI, as que ela tinha antes saem do site. Nas outras fontes, um resultado sem
+   * nada aproveitável é tratado como falha e nada é apagado.
+   */
+  listaCompleta?: boolean;
   buscar(): Promise<VagaExterna[]>;
 }

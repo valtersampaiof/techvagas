@@ -88,6 +88,27 @@ describe("sincronizarVagas", () => {
     expect(await db.vaga.count({ where: { origem: "falsa" } })).toBe(1);
   });
 
+  it("fonte que lista tudo (página de carreiras): se nada serve mais, as vagas antigas saem; sem a marca, ficam", async () => {
+    const outraEmpresa = (id: string) => ({ ...vaga(id, "Dev Python Júnior"), origem: "carreira:teste:acme", link: `https://acme.exemplo/${id}` });
+    const carreira = (vagas: () => VagaExterna[], listaCompleta?: boolean) =>
+      fonte(vagas, { origem: "carreira:teste:acme", rotulo: "Acme (teste)", listaCompleta });
+
+    await sincronizarVagas(db, [carreira(() => [outraEmpresa("c1")])]);
+    expect(await db.vaga.count({ where: { origem: "carreira:teste:acme" } })).toBe(1);
+
+    // Só sobrou vaga de nível sênior: sem a marca, nada é apagado (poderia ser falha da fonte)...
+    const sobrou = () => [{ ...outraEmpresa("c2"), titulo: "Desenvolvedor Sênior" }];
+    await sincronizarVagas(db, [carreira(sobrou)]);
+    expect(await db.vaga.count({ where: { origem: "carreira:teste:acme" } })).toBe(1);
+
+    // ...mas com a marca de lista completa, a vaga que fechou sai, até com a lista vazia.
+    await sincronizarVagas(db, [carreira(sobrou, true)]);
+    expect(await db.vaga.count({ where: { origem: "carreira:teste:acme" } })).toBe(0);
+    await sincronizarVagas(db, [carreira(() => [outraEmpresa("c3")])]);
+    await sincronizarVagas(db, [carreira(() => [], true)]);
+    expect(await db.vaga.count({ where: { origem: "carreira:teste:acme" } })).toBe(0);
+  });
+
   it("não salva de novo a vaga (mesmo cargo e empresa) que uma fonte anterior já trouxe", async () => {
     const daFonte = (origem: string, rotulo: string, vagas: VagaExterna[]): FonteExterna => ({
       origem,

@@ -31,6 +31,11 @@ describe("interpretarLocal (formatos reais da Gupy e da Adzuna)", () => {
     expect(interpretarLocal("Brasilia, Distrito Federal").chave).toBe("brasilia");
   });
 
+  it("'São Paulo' e 'Rio de Janeiro' sozinhos (ou só com o país) são a cidade, que tem o mesmo nome do estado", () => {
+    expect(interpretarLocal("São Paulo, Brazil")).toEqual({ cidade: "São Paulo", uf: "SP", chave: "sao paulo" });
+    expect(interpretarLocal("Rio de Janeiro")).toEqual({ cidade: "Rio de Janeiro", uf: "RJ", chave: "rio de janeiro" });
+  });
+
   it("só o nome do estado dá estado, sem cidade", () => {
     expect(interpretarLocal("Paraná")).toEqual({ cidade: "", uf: "PR", chave: "" });
     expect(interpretarLocal("Estado de São Paulo")).toEqual({ cidade: "", uf: "SP", chave: "" });
