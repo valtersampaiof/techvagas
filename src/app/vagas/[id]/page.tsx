@@ -11,6 +11,7 @@ import { idsDasVagasSalvas } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
 import { BotaoSalvar } from "@/components/BotaoSalvar";
 import { CartaoCurso } from "@/components/CartaoCurso";
+import { DescricaoDaVaga } from "@/components/DescricaoDaVaga";
 import { RequisitoComCursos } from "@/components/RequisitoComCursos";
 import { SeloCompatibilidade } from "@/components/SeloCompatibilidade";
 
@@ -110,7 +111,6 @@ export default async function PaginaDaVaga({ params }: Props) {
             </span>
           </p>
         )}
-        <p className="mt-4 whitespace-pre-line text-slate-700">{vaga.descricao}</p>
         {vaga.origem === "exemplo" ? (
           <p className="mt-3 text-xs text-amber-700">Vaga fictícia, criada apenas para demonstração.</p>
         ) : (
@@ -133,6 +133,8 @@ export default async function PaginaDaVaga({ params }: Props) {
           </div>
         )}
       </header>
+
+      <DescricaoDaVaga detalhes={vaga.detalhes} descricao={vaga.descricao} />
 
       {semRequisitos ? (
         <section className="rounded-xl border border-slate-200 bg-white p-5">

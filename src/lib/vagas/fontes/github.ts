@@ -1,5 +1,5 @@
 import { pedirJson, buscarPorTermos } from "../http";
-import { dataOuNull, markdownParaTexto, textoOuVazio, urlSegura } from "../texto";
+import { dataOuNull, markdownParaTextoEstruturado, textoOuVazio, urlSegura } from "../texto";
 import type { FonteExterna, VagaExterna } from "../tipos";
 
 /**
@@ -60,7 +60,7 @@ export function converterIssues(json: unknown, repositorio: string): VagaExterna
       titulo,
       empresa: empresa || "Empresa não informada",
       cidade,
-      descricao: markdownParaTexto(textoOuVazio(i.body)),
+      descricao: markdownParaTextoEstruturado(textoOuVazio(i.body)),
       link,
       publicadaEm: dataOuNull(i.created_at),
       rotulos,

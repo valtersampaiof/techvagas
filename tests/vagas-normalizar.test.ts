@@ -286,6 +286,17 @@ describe("normalizarVaga", () => {
     }
   });
 
+  it("quem COMPRA, vende ou recruta para a área de TI não trabalha com TI (ex.: 'Comprador Júnior - TI')", () => {
+    const descricao = "Compras de hardware, periféricos, infraestrutura de TI, softwares e licenças. Redes, Linux e SQL.";
+    for (const titulo of ["Comprador(a) Júnior - TI - Jd. Paulista (578012/578013)", "Analista de Compras de TI", "Vendedor de Soluções de TI", "Recrutadora de TI", "Analista de Marketing de Produto"]) {
+      expect(normalizarVaga(vaga({ titulo, descricao }), HABILIDADES), titulo).toBeNull();
+    }
+    // quando a função é técnica, continua valendo, mesmo citando vendas ou compras
+    for (const titulo of ["Analista de Dados de Vendas", "Desenvolvedor para o time de Compras", "Engenheiro de Software - Plataforma de Vendas"]) {
+      expect(normalizarVaga(vaga({ titulo, descricao: "Python e SQL." }), HABILIDADES), titulo).not.toBeNull();
+    }
+  });
+
   it("'Desenvolvedor de Mercado', de Hardware ou de Negócios não é desenvolvedor de software", () => {
     for (const titulo of ["Desenvolvedor(a) de Mercado | Varejo 5G", "Desenvolvedor de Hardware", "Desenvolvedor(a) de Negócios", "Desenvolvedor de Canais"]) {
       expect(normalizarVaga(vaga({ titulo, descricao: "Prospecção de clientes e vendas." }), HABILIDADES), titulo).toBeNull();

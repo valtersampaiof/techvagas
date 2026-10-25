@@ -40,7 +40,10 @@ export type VagaComRequisitos = {
   /** "clt", "pj", "clt_pj", "estagio" ou "" (o anúncio não diz). */
   contrato: string;
   area: string;
+  /** Na lista, o resumo da vaga (o que a pessoa vai fazer); em `obter`, o texto simples do anúncio. */
   descricao: string;
+  /** O anúncio organizado em seções (JSON de `DescricaoOrganizada`). Só vem em `obter`; vazio na lista e nas vagas antigas. */
+  detalhes: string;
   link: string;
   /** false: a vaga sumiu da fonte, mas foi mantida porque alguém a salvou. */
   ativa: boolean;
@@ -91,6 +94,8 @@ type VagaDoBanco = {
   contrato: string;
   area: string;
   descricao: string;
+  resumo: string;
+  detalhes: string;
   link: string;
   origem: string;
   ativa: boolean;
@@ -102,7 +107,7 @@ type VagaDoBanco = {
   requisitos: { habilidadeId: number; nivelMinimo: string; obrigatorio: boolean }[];
 };
 
-function converter(v: VagaDoBanco, habilidades: HabilidadesPorId): VagaComRequisitos {
+function converter(v: VagaDoBanco, habilidades: HabilidadesPorId, completa = false): VagaComRequisitos {
   return {
     id: v.id,
     titulo: v.titulo,
@@ -114,7 +119,9 @@ function converter(v: VagaDoBanco, habilidades: HabilidadesPorId): VagaComRequis
     tipo: v.tipo,
     contrato: v.contrato,
     area: v.area,
-    descricao: v.descricao,
+    // Na lista vale o resumo (vagas antigas, sem resumo, mostram o começo do texto).
+    descricao: completa ? v.descricao : v.resumo || v.descricao,
+    detalhes: completa ? v.detalhes : "",
     link: v.link,
     origem: v.origem,
     ativa: v.ativa,
@@ -185,7 +192,7 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
 
     async obter(id) {
       const v = await banco.vaga.findUnique({ where: { id }, include: incluirRequisitos });
-      return v ? converter(v, await habilidadesPorId()) : null;
+      return v ? converter(v, await habilidadesPorId(), true) : null;
     },
 
     async areas() {

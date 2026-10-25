@@ -80,7 +80,7 @@ O que o comando faz com cada vaga:
 - deduz habilidades básicas pelo cargo (ex.: "Front-end" implica HTML/CSS e JavaScript; "Analista de Dados" implica análise de dados);
 - mantém vagas que claramente são de TI mesmo sem tecnologias no texto (ex.: "Estágio em Tecnologia da Informação"), mas **sem
   requisitos**: o site não calcula compatibilidade nem indica cursos para elas, e avisa isso na tela;
-- descarta banco de talentos e vagas que não são de TI (ex.: "Estágio para Direito", "Desenvolvedor de Negócios", "Analista de Redes Sociais"). Se o cargo não indica
+- descarta banco de talentos e vagas que não são de TI (ex.: "Estágio para Direito", "Desenvolvedor de Negócios", "Analista de Redes Sociais"), inclusive as de quem compra, vende ou recruta para a área de TI ("Comprador Júnior - TI" cita TI, mas não é uma vaga de tecnologia); Se o cargo não indica
   tecnologia, o texto precisa pedir pelo menos duas habilidades técnicas fortes (inglês, suporte, metodologias ágeis e
   análise de dados sozinhos não bastam);
 - atualiza as que já existem e **remove as que saíram do ar** (nunca mexe nas vagas de outras fontes);
@@ -118,6 +118,27 @@ A **contratação** (CLT, PJ, CLT ou PJ) vem do que a fonte informa (a Gupy diz 
 anúncio escreve ("CLT", "PJ", "pessoa jurídica"). Se o anúncio não diz, o campo fica vazio e a tela não mostra selo:
 o site prefere não informar a chutar. Ao filtrar por CLT ou PJ, as vagas que aceitam os dois entram nas duas, e as que não
 informam ficam de fora. Os salários aceitos vão de R$ 300 a R$ 60.000 por mês.
+
+## Texto da vaga organizado
+
+Os anúncios chegam das fontes como um bloco de texto só (a Gupy, por exemplo, entrega os títulos colados na frase
+seguinte: "...atribuiçõesDesenvolver aplicações..."). Na página da vaga, o texto aparece organizado
+(`src/lib/vagas/organizar.ts`):
+
+- **Requisitos da vaga**: um quadro com **escolaridade**, **experiência** e **idiomas** (e certificações, quando
+  há), lidos dos itens de requisitos do anúncio. Quando o anúncio não diz, o quadro escreve "O anúncio não informa". Vaga
+  exclusiva para pessoas com deficiência e outras vagas afirmativas ganham um aviso.
+- **Descrição em seções**, cada uma em lista: o que você vai fazer, requisitos, perfil comportamental, diferenciais,
+  benefícios e outras informações (jornada, local, etapas). A propaganda da empresa, que costuma abrir o anúncio, fica
+  recolhida ("ler tudo").
+- Nos **cartões da lista**, o resumo mostra as primeiras atividades da vaga, não a propaganda da empresa.
+
+Como funciona: reconhece os títulos do modelo da Gupy (mesmo colados), títulos comuns ("Requisitos:", "Benefícios",
+"Diferenciais", "O que aumenta suas chances?"), títulos em HTML (Greenhouse, Lever, Ashby) e em Markdown (GitHub);
+separa os itens por ";", por ponto final colado e por marcadores; junta linhas quebradas no meio da frase; e não quebra
+siglas e nomes como "S.A.", "Sr.", "Node.JS" e "JavaScript". Os testes usam trechos de anúncios reais. É uma
+**leitura automática**: um título fora do padrão pode cair em "outras informações", e a página avisa para conferir
+na vaga original. As vagas antigas, sem o texto organizado guardado, são organizadas na hora ao abrir a página.
 
 Para incluir outra fonte, crie um arquivo em `src/lib/vagas/fontes/` que cumpra a interface `FonteExterna`
 (`src/lib/vagas/tipos.ts`) e acrescente-o em `src/lib/vagas/fontes/index.ts`.

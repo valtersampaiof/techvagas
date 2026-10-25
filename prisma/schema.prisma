@@ -60,7 +60,12 @@ model Vaga {
   // Como a pessoa é contratada: "clt", "pj", "clt_pj" (aceita os dois), "estagio" ou "" (o anúncio não diz).
   contrato    String @default("")
   area        String
+  // Texto simples do anúncio (até 1.500 caracteres), usado na busca.
   descricao   String
+  // Duas ou três atividades da vaga, para o cartão da lista.
+  resumo      String @default("")
+  // O anúncio organizado em seções, em JSON (veja src/lib/vagas/organizar.ts). Vazio nas vagas antigas.
+  detalhes    String @default("")
   link        String @default("")
 
   // De onde veio: "exemplo" (vagas fictícias da demonstração) ou o nome de uma fonte real.

@@ -3,6 +3,7 @@ import { extrairHabilidades, normalizar } from "../extrair-habilidades";
 import type { Nivel } from "../niveis";
 import { extrairSalarioDoTexto, type Salario } from "../salario";
 import type { Contrato, TipoDeVaga } from "../tipos-de-vaga";
+import { organizarDescricao, textoSimples } from "./organizar";
 import { ehBancoDeTalentos, espacarFrases, truncar } from "./texto";
 import type { VagaExterna } from "./tipos";
 
@@ -11,6 +12,10 @@ export type { TipoDeVaga } from "../tipos-de-vaga";
 export type VagaNormalizada = VagaExterna & {
   tipo: TipoDeVaga;
   contrato: Contrato;
+  /** Atividades da vaga em poucas linhas, para o cartão. */
+  resumo: string;
+  /** O anúncio organizado em seções, em JSON (`DescricaoOrganizada`). */
+  detalhes: string;
   modalidade: "remoto" | "hibrido" | "presencial";
   area: string;
   requisitos: { slug: string; nivelMinimo: Nivel; obrigatorio: boolean }[];
@@ -227,6 +232,17 @@ const SINAIS_DE_TI = new RegExp(
     ")\\b",
 );
 
+/**
+ * Funções que não são de tecnologia, mesmo quando o anúncio cita TI ("Comprador Júnior - TI" é quem COMPRA equipamentos de
+ * TI, não quem trabalha com TI). Só vale quando a função está logo no começo do cargo.
+ */
+const FUNCAO_NAO_TECNICA =
+  /^(?:\w+\s+){0,2}(comprador[a]?|vendedor[a]?|recrutador[a]?|contador[a]?|advogad[oa]|motorista|enfermeir[oa]|cozinheir[oa]|analista (de (compras|vendas|marketing|recrutamento|recursos humanos|rh|cobranca|credito|cadastro|logistica)|comercial|contabil|fiscal|financeiro|juridico)|assistente (de (compras|vendas|rh|cobranca|logistica)|comercial|administrativo|financeiro)|auxiliar (de (compras|vendas|cobranca)|administrativo)|executivo de (contas|vendas)|gerente (de (contas|vendas|marketing|compras)|comercial|financeiro)|business developer|sdr)\b/;
+
+export function ehFuncaoNaoTecnica(titulo: string): boolean {
+  return FUNCAO_NAO_TECNICA.test(normalizar(titulo).trim());
+}
+
 export function pareceDeTI(titulo: string): boolean {
   return SINAIS_DE_TI.test(normalizar(titulo));
 }
@@ -261,6 +277,8 @@ export function escolherArea(slugs: string[], catalogo: HabilidadeBase[], titulo
  */
 const HABILIDADES_FRACAS = new Set(["ingles", "ageis", "suporte", "analise-dados", "itil", "gestao-projetos", "produto", "lideranca", "lgpd", "erp"]);
 const MIN_TECNICAS_FORTES_SEM_CARGO_DE_TI = 2;
+/** Anúncios maiores que isto são cortados antes de organizar (o resto costuma ser rodapé jurídico e propaganda). */
+const TAMANHO_MAXIMO_DO_ANUNCIO = 12_000;
 
 /**
  * Transforma uma vaga bruta em uma vaga do site. Devolve null quando não serve:
@@ -270,7 +288,7 @@ const MIN_TECNICAS_FORTES_SEM_CARGO_DE_TI = 2;
  * com clareza em vez de inventar uma compatibilidade.
  */
 export function normalizarVaga(v: VagaExterna, catalogo: HabilidadeBase[]): VagaNormalizada | null {
-  if (ehBancoDeTalentos(v.titulo)) return null;
+  if (ehBancoDeTalentos(v.titulo) || ehFuncaoNaoTecnica(v.titulo)) return null;
   const tipo = detectarTipo(v.titulo, v.rotulos, v.descricao);
 
   const requisitos = extrairRequisitos(v.titulo, v.descricao, catalogo, tipo);
@@ -278,11 +296,14 @@ export function normalizarVaga(v: VagaExterna, catalogo: HabilidadeBase[]): Vaga
   // Cargo sem cara de TI precisa de provas no texto: uma menção solta (ex.: "IA" num programa geral de estágio) não basta.
   if (!pareceDeTI(v.titulo) && tecnicasFortes < MIN_TECNICAS_FORTES_SEM_CARGO_DE_TI) return null;
 
+  const organizada = organizarDescricao(v.descricao.slice(0, TAMANHO_MAXIMO_DO_ANUNCIO));
   return {
     ...v,
     cidade: v.cidade || "Brasil",
     // As habilidades já foram lidas do texto original; aqui só arrumamos a versão exibida.
-    descricao: truncar(espacarFrases(v.descricao), 1500),
+    descricao: truncar(espacarFrases(textoSimples(v.descricao)), 1500),
+    resumo: organizada.resumo,
+    detalhes: JSON.stringify(organizada),
     tipo,
     contrato: detectarContrato(v, tipo),
     modalidade: detectarModalidade(v),

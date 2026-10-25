@@ -79,7 +79,7 @@ describe("configuracaoDeEmail", () => {
 describe("montarEmailDoAlerta", () => {
   const vaga = (id: number, extra: Partial<VagaComRequisitos> & { compatibilidade?: number | null } = {}): VagaComRequisitos & { compatibilidade?: number | null } => ({
     id, titulo: `Estágio ${id}`, empresa: "Acme", cidade: "Recife, Pernambuco", cidadeNome: "Recife", uf: "PE", modalidade: "presencial",
-    tipo: "estagio", contrato: "estagio", area: "Programação", descricao: "", link: "https://exemplo.com", ativa: true, primeiraVezEm: new Date(),
+    tipo: "estagio", contrato: "estagio", area: "Programação", descricao: "", detalhes: "", link: "https://exemplo.com", ativa: true, primeiraVezEm: new Date(),
     origem: "gupy", publicadaEm: null, salarioMin: null, salarioMax: null, salarioOrigem: "", requisitos: [], ...extra,
   });
   const base = {

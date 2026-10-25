@@ -1,5 +1,5 @@
 import { pedirJson, buscarPorTermos } from "../http";
-import { dataOuNull, htmlParaTexto, textoOuVazio, urlSegura } from "../texto";
+import { dataOuNull, htmlParaTexto, htmlParaTextoEstruturado, textoOuVazio, urlSegura } from "../texto";
 import type { FonteExterna, VagaExterna } from "../tipos";
 
 /**
@@ -37,7 +37,7 @@ export function converterRemotive(json: unknown): VagaExterna[] {
       titulo,
       empresa: textoOuVazio(j.company_name) || "Empresa não informada",
       cidade: `Remoto (${local})`,
-      descricao: htmlParaTexto(textoOuVazio(j.description)),
+      descricao: htmlParaTextoEstruturado(textoOuVazio(j.description)),
       link,
       publicadaEm: dataOuNull(j.publication_date),
       modalidade: "remoto" as const,

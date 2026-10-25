@@ -2,7 +2,7 @@ const ENTIDADES: Record<string, string> = {
   amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ",
 };
 
-function decodificarEntidades(s: string): string {
+export function decodificarEntidades(s: string): string {
   return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (inteiro, c: string) => {
     if (c[0] === "#") {
       const codigo = c[1].toLowerCase() === "x" ? parseInt(c.slice(2), 16) : parseInt(c.slice(1), 10);
@@ -84,4 +84,41 @@ const BANCO_DE_TALENTOS = /\b(banco de talentos|cadastro (de )?reserva|banco de 
 
 export function ehBancoDeTalentos(titulo: string): boolean {
   return BANCO_DE_TALENTOS.test(titulo);
+}
+
+const textoCurto = (html: string) => htmlParaTexto(html).replace(/\s+/g, " ").trim();
+
+/**
+ * Como `htmlParaTexto`, mas guarda a estrutura do anúncio em marcas simples: título vira "## Título" (tags h1 a h6 e
+ * parágrafos curtos só em negrito) e item de lista vira "• item". Quem organiza o texto depois (`organizarDescricao`)
+ * entende essas marcas.
+ */
+export function htmlParaTextoEstruturado(html: string): string {
+  const t = html
+    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<h[1-6][^>]*>([\s\S]*?)<\/h[1-6]>/gi, (_, c: string) => `\n\n## ${textoCurto(c)}\n`)
+    .replace(/<(p|div)[^>]*>\s*(?:<br\s*\/?>\s*)*<(strong|b)[^>]*>([\s\S]*?)<\/\2>\s*(?:<br\s*\/?>\s*)*<\/\1>/gi, (inteiro, _bloco, _negrito, c: string) => {
+      const titulo = textoCurto(c);
+      return titulo.length > 0 && titulo.length <= 90 ? `\n\n## ${titulo}\n` : inteiro;
+    })
+    .replace(/<li[^>]*>/gi, "\n• ")
+    .replace(/<\/li>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|ul|ol|table|tr|section|article|blockquote)>/gi, "\n\n");
+  return htmlParaTexto(t);
+}
+
+/** Markdown (anúncios do GitHub) para texto com as mesmas marcas de `htmlParaTextoEstruturado`. */
+export function markdownParaTextoEstruturado(md: string): string {
+  const t = md
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/^#{1,6}\s*(.+)$/gm, "\n\n## $1\n")
+    .replace(/^\s*(?:\*\*|__)([^*_\n]{2,80}?):?(?:\*\*|__):?\s*$/gm, "\n\n## $1\n")
+    .replace(/^\s*[-*+]\s+/gm, "• ")
+    .replace(/^\s*\d+[.)]\s+/gm, "• ")
+    .replace(/(\*\*|__|\*|_|`)/g, "");
+  return htmlParaTexto(t);
 }

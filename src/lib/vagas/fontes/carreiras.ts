@@ -4,7 +4,7 @@ import { PREFIXO_CARREIRA } from "../../rotulos";
 import { pedirJson } from "../http";
 import { pareceDeTI } from "../normalizar";
 import { escritoEmEspanhol } from "../idioma";
-import { dataOuNull, ehBancoDeTalentos, htmlParaTexto, textoOuVazio, urlSegura } from "../texto";
+import { dataOuNull, decodificarEntidades, ehBancoDeTalentos, htmlParaTexto, htmlParaTextoEstruturado, textoOuVazio, urlSegura } from "../texto";
 import type { FonteExterna, VagaExterna } from "../tipos";
 
 /**
@@ -143,8 +143,8 @@ export function ehDeTecnologia(v: { titulo: string; setor?: string }, empresa: E
 /** "[Job-32142] Developer Fullstack Jr" → "Developer Fullstack Jr" (código interno da empresa). */
 const limparTitulo = (t: string) => t.replace(/^\s*\[[^\]]*\]\s*/, "").replace(/\s+/g, " ").trim();
 
-/** O texto vem com as etiquetas escritas como texto ("&lt;p&gt;"): decodifica uma vez e só então tira as etiquetas. */
-const descricaoDoGreenhouse = (html: string) => htmlParaTexto(htmlParaTexto(html));
+/** O texto vem com as etiquetas escritas como texto ("&lt;p&gt;"): decodifica uma vez e só então lê o HTML, guardando títulos e listas. */
+const descricaoDoGreenhouse = (html: string) => htmlParaTextoEstruturado(decodificarEntidades(html));
 
 type VagaGreenhouse = {
   id?: number;
@@ -190,7 +190,9 @@ type VagaLever = {
   createdAt?: number;
   country?: string;
   workplaceType?: string;
+  description?: string;
   descriptionPlain?: string;
+  additional?: string;
   additionalPlain?: string;
   lists?: { text?: string; content?: string }[];
   categories?: { location?: string; commitment?: string; department?: string; team?: string; allLocations?: string[] };
@@ -208,8 +210,13 @@ export function converterLever(json: unknown, empresa: Empresa): VagaExterna[] {
     const noBrasil = v.country ? v.country.toUpperCase() === "BR" : localValido(local, empresa);
     if (!v.id || !link || !titulo || !noBrasil) return [];
 
-    const listas = (v.lists ?? []).map((l) => `${textoOuVazio(l.text)}\n${htmlParaTexto(textoOuVazio(l.content))}`).join("\n\n");
-    const descricao = [textoOuVazio(v.descriptionPlain), listas, textoOuVazio(v.additionalPlain)].filter(Boolean).join("\n\n");
+    // O texto da Lever vem em partes: abertura, listas com título (ex.: "Requisitos") e um texto final. Cada lista vira uma seção.
+    const listas = (v.lists ?? [])
+      .map((l) => `## ${htmlParaTexto(textoOuVazio(l.text))}\n${htmlParaTextoEstruturado(`<ul>${textoOuVazio(l.content)}</ul>`)}`)
+      .join("\n\n");
+    const abertura = v.description ? htmlParaTextoEstruturado(v.description) : textoOuVazio(v.descriptionPlain);
+    const fim = v.additional ? htmlParaTextoEstruturado(v.additional) : textoOuVazio(v.additionalPlain);
+    const descricao = [abertura, listas, fim].filter(Boolean).join("\n\n");
     const compromisso = textoOuVazio(v.categories?.commitment);
     return [{
       origem: origemDaEmpresa(empresa),
@@ -242,6 +249,7 @@ type VagaAshby = {
   team?: string;
   address?: { postalAddress?: { addressCountry?: string } };
   jobUrl?: string;
+  descriptionHtml?: string;
   descriptionPlain?: string;
 };
 
@@ -268,7 +276,7 @@ export function converterAshby(json: unknown, empresa: Empresa): VagaExterna[] {
       titulo,
       empresa: empresa.nome,
       cidade: melhorLocal(locais.find((l) => interpretarLocal(l).uf !== "") ?? locais[0] ?? ""),
-      descricao: textoOuVazio(v.descriptionPlain),
+      descricao: v.descriptionHtml ? htmlParaTextoEstruturado(v.descriptionHtml) : textoOuVazio(v.descriptionPlain),
       link,
       publicadaEm: dataOuNull(v.publishedAt),
       modalidade: MODALIDADE_ASHBY[normalizar(textoOuVazio(v.workplaceType))] ?? (v.isRemote ? "remoto" : undefined),
