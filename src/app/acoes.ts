@@ -11,6 +11,7 @@ import { MAX_ALERTAS_POR_PESSOA, gerarToken, nomeDoAlerta, temAlgumFiltro } from
 import { normalizar } from "@/lib/extrair-habilidades";
 import { SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
 import { ESTADOS } from "@/lib/localizacao";
+import { FILTROS_DE_CONTRATO, TIPOS_DE_VAGA } from "@/lib/tipos-de-vaga";
 
 export type EstadoDoFormulario =
   | {
@@ -124,7 +125,8 @@ export async function alternarVagaSalva(vagaId: number): Promise<ResultadoDeSalv
 const esquemaAlerta = z.object({
   uf: z.string().trim().toUpperCase().refine((v) => v === "" || ESTADOS.some((e) => e.uf === v), "Estado inválido."),
   cidade: z.string().trim().max(80, "O nome da cidade está grande demais."),
-  tipo: z.enum(["", "estagio", "trainee", "junior"], { message: "Tipo de vaga inválido." }),
+  tipo: z.enum(["", ...TIPOS_DE_VAGA], { message: "Nível de vaga inválido." }),
+  contrato: z.enum(["", ...FILTROS_DE_CONTRATO], { message: "Tipo de contratação inválido." }),
   area: z.string().trim().max(60, "Área inválida."),
   salarioMinimo: z
     .string()
@@ -140,6 +142,7 @@ export async function criarAlerta(_: EstadoDoFormulario, formData: FormData): Pr
     uf: String(formData.get("uf") ?? ""),
     cidade: String(formData.get("cidade") ?? ""),
     tipo: String(formData.get("tipo") ?? ""),
+    contrato: String(formData.get("contrato") ?? ""),
     area: String(formData.get("area") ?? ""),
     salarioMinimo: String(formData.get("salarioMinimo") ?? ""),
     incluirRemotas: formData.get("incluirRemotas") === "1" ? "1" : "",
@@ -155,7 +158,7 @@ export async function criarAlerta(_: EstadoDoFormulario, formData: FormData): Pr
     salarioMinimo: dados.data.salarioMinimo ? Number(dados.data.salarioMinimo) : null,
     incluirRemotas: formData.get("incluirRemotas") === "1",
   };
-  if (!temAlgumFiltro(filtros)) return recusar("Escolha pelo menos um filtro (estado, cidade, tipo, área ou salário) para o alerta.");
+  if (!temAlgumFiltro(filtros)) return recusar("Escolha pelo menos um filtro (estado, cidade, nível, contratação, área ou salário) para o alerta.");
 
   const existentes = await db.alerta.findMany({ where: { usuarioId: usuario.id } });
   if (existentes.length >= MAX_ALERTAS_POR_PESSOA) {
@@ -164,7 +167,7 @@ export async function criarAlerta(_: EstadoDoFormulario, formData: FormData): Pr
   const cidadeChave = normalizar(filtros.cidade).trim();
   const repetido = existentes.some(
     (a) =>
-      a.uf === filtros.uf && a.cidadeChave === cidadeChave && a.tipo === filtros.tipo && a.area === filtros.area &&
+      a.uf === filtros.uf && a.cidadeChave === cidadeChave && a.tipo === filtros.tipo && a.contrato === filtros.contrato && a.area === filtros.area &&
       a.salarioMinimo === filtros.salarioMinimo && a.incluirRemotas === filtros.incluirRemotas,
   );
   if (repetido) return recusar("Você já tem um alerta igual a esse.");

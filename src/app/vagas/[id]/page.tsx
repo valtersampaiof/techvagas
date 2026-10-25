@@ -6,7 +6,7 @@ import { listarCursosCandidatos } from "@/lib/cursos";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
 import { formatarPublicacao, formatarSalario } from "@/lib/formatar";
-import { ROTULO_MODALIDADE, ROTULO_TIPO, rotuloDaOrigem, rotuloDoLocal } from "@/lib/rotulos";
+import { ROTULO_CONTRATO, ROTULO_MODALIDADE, ROTULO_TIPO, rotuloDaOrigem, rotuloDoLocal } from "@/lib/rotulos";
 import { idsDasVagasSalvas } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
 import { BotaoSalvar } from "@/components/BotaoSalvar";
@@ -86,10 +86,20 @@ export default async function PaginaDaVaga({ params }: Props) {
           </p>
         )}
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
-          <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">{ROTULO_TIPO[vaga.tipo] ?? vaga.tipo}</span>
+          <span className={`rounded px-2 py-1 ${vaga.tipo === "indefinido" ? "bg-slate-100 text-slate-600" : "bg-indigo-50 text-indigo-700"}`}>
+            {ROTULO_TIPO[vaga.tipo] ?? vaga.tipo}
+          </span>
+          {vaga.contrato && vaga.contrato !== "estagio" && (
+            <span className="rounded bg-violet-50 px-2 py-1 font-medium text-violet-800">{ROTULO_CONTRATO[vaga.contrato] ?? vaga.contrato}</span>
+          )}
           <span className="rounded bg-slate-100 px-2 py-1">{ROTULO_MODALIDADE[vaga.modalidade] ?? vaga.modalidade}</span>
           <span className="rounded bg-slate-100 px-2 py-1">{vaga.area}</span>
         </div>
+        {vaga.tipo === "indefinido" && (
+          <p className="mt-3 text-xs text-slate-500">
+            O anúncio não diz o nível da vaga (júnior, pleno, sênior), então os cursos sugeridos partem do nível iniciante.
+          </p>
+        )}
         {salario && (
           <p className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
             <strong>💰 {salario}</strong>

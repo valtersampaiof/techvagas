@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CURSOS } from "@/lib/dados/cursos";
+import { CURSOS_GESTAO } from "@/lib/dados/cursos-gestao";
+import { CURSOS_PLENO_SENIOR, ETIQUETAS_EXTRAS } from "@/lib/dados/cursos-pleno-senior";
 import { HABILIDADES } from "@/lib/dados/habilidades";
 import { VAGAS } from "@/lib/dados/vagas";
 import { ehNivel } from "@/lib/niveis";
@@ -13,6 +15,32 @@ describe("catálogo de habilidades", () => {
 });
 
 describe("catálogo de cursos", () => {
+  it("tem pelo menos 400 cursos", () => {
+    expect(CURSOS.length).toBeGreaterThanOrEqual(400);
+  });
+
+  it("cada etiqueta extra aponta para um curso que existe (se um curso for renomeado, o teste avisa)", () => {
+    const chaves = new Set(CURSOS.map((c) => `${c.instituicao}|${c.titulo}`));
+    for (const chave of Object.keys(ETIQUETAS_EXTRAS)) expect(chaves.has(chave), `curso não encontrado: ${chave}`).toBe(true);
+  });
+
+  it("as etiquetas extras entram no curso, e as principais ficam em primeiro", () => {
+    const cka = CURSOS.find((c) => c.titulo === "Certified Kubernetes Administrator (CKA)")!;
+    expect(cka.habilidades[0]).toEqual(["kubernetes", "avancado"]);
+    expect(cka.habilidades.length).toBeGreaterThan(1);
+    const ms900 = CURSOS.find((c) => c.titulo === "Fundamentos do Microsoft 365 (MS-900)")!;
+    expect(ms900.habilidades.at(-1)).toEqual(["windows", "iniciante"]);
+    // quem já tinha a habilidade não ganha duplicata
+    for (const c of CURSOS) expect(new Set(c.habilidades.map(([s]) => s)).size, c.titulo).toBe(c.habilidades.length);
+  });
+
+  it("os arquivos novos só têm cursos novos (nenhum repete título de outro arquivo)", () => {
+    const novos = [...CURSOS_PLENO_SENIOR, ...CURSOS_GESTAO];
+    const todos = new Map<string, number>();
+    for (const c of CURSOS) todos.set(`${c.instituicao}|${c.titulo}`, (todos.get(`${c.instituicao}|${c.titulo}`) ?? 0) + 1);
+    for (const c of novos) expect(todos.get(`${c.instituicao}|${c.titulo}`), c.titulo).toBe(1);
+  });
+
   it("só cita habilidades que existem, com níveis válidos e sem repetir habilidade no mesmo curso", () => {
     for (const c of CURSOS) {
       expect(c.habilidades.length, c.titulo).toBeGreaterThan(0);
@@ -52,8 +80,8 @@ describe("catálogo de cursos", () => {
     }
   });
 
-  // TypeScript: o material gratuito bom (documentação oficial) não emite certificado.
-  const SEM_GRATUITO_COM_CERTIFICADO = new Set(["typescript"]);
+  // O melhor material gratuito destas habilidades é a documentação oficial (ou emite só emblema digital), sem certificado.
+  const SEM_GRATUITO_COM_CERTIFICADO = new Set(["typescript", "ruby", "angular", "vue", "erp"]);
 
   it("toda habilidade tem curso gratuito COM certificado", () => {
     for (const h of HABILIDADES.filter((x) => !SEM_GRATUITO_COM_CERTIFICADO.has(x.slug))) {

@@ -21,6 +21,50 @@ const vaga = (extra: Record<string, unknown> = {}) => ({
 
 afterEach(() => vi.unstubAllGlobals());
 
+describe("converterGupy: vagas de outros países", () => {
+  const tipo = { type: "vacancy_type_effective" };
+  it("descarta o que está em espanhol ou fica em cidade estrangeira, e mantém o resto", () => {
+    const r = converterGupy({
+      data: [
+        vaga({ ...tipo, id: 1, name: "Desarrollador Back End Cloud", city: "", state: "", description: "<p>Buscamos un desarrollador con experiencia y conocimientos de AWS. Ofrecemos beneficios.</p>" }),
+        vaga({ ...tipo, id: 2, name: "Chile - Hybrid Cloud Specialist", city: "Las Condes", state: "", description: "<p>Cloud engineer role working with AWS and Azure.</p>" }),
+        vaga({ ...tipo, id: 3, name: "Engenheiro de Software", city: "Curitiba", state: "Paraná", description: "<p>Você vai atuar com Java. Nossa equipe é remota.</p>" }),
+        vaga({ ...tipo, id: 4, name: "Desenvolvedor Python", city: "", state: "", description: "<p>Você atuará com Python em uma vaga 100% remota.</p>" }),
+        vaga({ ...tipo, id: 5, name: "Cloud Engineer", city: "São Paulo", state: "", description: "<p>Work with AWS from our São Paulo office.</p>" }),
+      ],
+    });
+    expect(r.map((v) => v.idExterno)).toEqual(["3", "4", "5"]);
+  });
+});
+
+describe("converterGupy: tipo de contrato", () => {
+  it("efetivo vira CLT, 'legal entity' vira PJ, e só os tipos de vaga de emprego entram", () => {
+    const r = converterGupy({
+      data: [
+        vaga({ id: 1, type: "vacancy_type_effective" }),
+        vaga({ id: 2, type: "vacancy_legal_entity" }),
+        vaga({ id: 3, type: "vacancy_type_internship" }),
+        vaga({ id: 4, type: "vacancy_type_trainee" }),
+        vaga({ id: 5, type: "vacancy_type_temporary" }),
+        vaga({ id: 6, type: "vacancy_type_talent_pool" }),
+        vaga({ id: 7, type: "vacancy_type_apprentice" }),
+        vaga({ id: 8, type: "vacancy_type_parter" }),
+        vaga({ id: 9, type: undefined }),
+      ],
+    });
+    expect(r.map((v) => [v.idExterno, v.contrato])).toEqual([["1", "clt"], ["2", "pj"], ["3", "estagio"], ["4", undefined], ["9", undefined]]);
+  });
+
+  it("a vaga efetiva de nível sênior chega ao site com nível, contrato e requisitos avançados", () => {
+    const [v] = converterGupy({
+      data: [vaga({ id: 10, name: "Engenheiro de Software Sênior", type: "vacancy_type_effective", description: "<p>Java e SQL. 6 anos de experiência.</p>" })],
+    });
+    const n = normalizarVaga(v, HABILIDADES)!;
+    expect(n).toMatchObject({ tipo: "senior", contrato: "clt" });
+    expect(n.requisitos.every((r) => r.nivelMinimo === "avancado")).toBe(true);
+  });
+});
+
 describe("converterGupy", () => {
   it("converte os campos da vaga", () => {
     const [v] = converterGupy({ data: [vaga()], pagination: { total: 1 } });

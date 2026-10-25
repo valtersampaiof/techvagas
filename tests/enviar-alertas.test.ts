@@ -235,6 +235,21 @@ describe("enviarAlertas (com um servidor SMTP de verdade)", () => {
     expect(recebidos[0].text).toContain("Remota de outro lugar");
   });
 
+  it("alerta com nível e contratação: só chegam as vagas desse nível e contrato ('CLT ou PJ' entra nos dois)", async () => {
+    await criarVaga("Sênior CLT", "Recife, PE", { tipo: "senior", contrato: "clt" });
+    await criarVaga("Sênior PJ", "Recife, PE", { tipo: "senior", contrato: "pj" });
+    await criarVaga("Sênior aceita os dois", "Recife, PE", { tipo: "senior", contrato: "clt_pj" });
+    await criarVaga("Sênior sem contrato informado", "Recife, PE", { tipo: "senior", contrato: "" });
+    await criarVaga("Pleno PJ", "Recife, PE", { tipo: "pleno", contrato: "pj" });
+    await criarAlerta({ tipo: "senior", contrato: "pj" });
+    const r = await executar();
+    expect(r[0].novas).toBe(2);
+    expect(recebidos[0].text).toContain("Sênior PJ");
+    expect(recebidos[0].text).toContain("Sênior aceita os dois");
+    expect(recebidos[0].text).not.toMatch(/Sênior CLT|sem contrato|Pleno PJ/);
+    expect(recebidos[0].text).toContain("tipo=senior&contrato=pj");
+  });
+
   it("inclui a compatibilidade quando a pessoa tem habilidades no perfil", async () => {
     const h = await db.habilidade.create({ data: { slug: "python", nome: "Python", area: "Programação" } });
     await db.habilidadeDoUsuario.create({ data: { usuarioId: usuario.id, habilidadeId: h.id, nivel: "iniciante" } });

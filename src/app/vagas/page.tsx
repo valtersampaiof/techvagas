@@ -6,7 +6,8 @@ import { PUBLICACOES, SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
 import { formatarReais } from "@/lib/formatar";
 import { ehDaRegiao, interpretarLocal, nomeDoEstado } from "@/lib/localizacao";
 import { numeroDaPagina, paginar } from "@/lib/paginacao";
-import { ROTULO_MODALIDADE, ROTULO_TIPO } from "@/lib/rotulos";
+import { ROTULO_CONTRATO, ROTULO_MODALIDADE, ROTULO_TIPO } from "@/lib/rotulos";
+import { ehFiltroDeContrato, ehTipoDeVaga, FILTROS_DE_CONTRATO } from "@/lib/tipos-de-vaga";
 import { idsDasVagasSalvas } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
 import { CartaoVaga } from "@/components/CartaoVaga";
@@ -17,6 +18,7 @@ export const metadata: Metadata = { title: "Vagas" };
 type Parametros = {
   busca?: string;
   tipo?: string;
+  contrato?: string;
   modalidade?: string;
   area?: string;
   uf?: string;
@@ -46,11 +48,14 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
   // Só valores conhecidos: qualquer outra coisa na URL é ignorada em vez de quebrar a página.
   const publicadaHaDias = filtros.publicada && PUBLICACOES[filtros.publicada] ? Number(filtros.publicada) : undefined;
   const salarioMinimo = (SALARIOS_MINIMOS as readonly number[]).includes(Number(filtros.salario)) ? Number(filtros.salario) : undefined;
+  const tipo = ehTipoDeVaga(filtros.tipo) ? filtros.tipo : undefined;
+  const contrato = ehFiltroDeContrato(filtros.contrato) ? filtros.contrato : undefined;
   const ordem = filtros.ordem === "recentes" || filtros.ordem === "salario" ? filtros.ordem : "padrao";
 
   const vagas = await fonteDeVagas.listar({
     busca: filtros.busca?.trim() || undefined,
-    tipo: filtros.tipo || undefined,
+    tipo,
+    contrato,
     modalidade: filtros.modalidade || undefined,
     area: filtros.area || undefined,
     uf,
@@ -119,7 +124,8 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
 
   const parametrosAtivos = {
     busca: filtros.busca,
-    tipo: filtros.tipo,
+    tipo,
+    contrato,
     modalidade: filtros.modalidade,
     area: filtros.area,
     uf: filtros.uf,
@@ -133,7 +139,8 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Vagas para quem está começando</h1>
+      <h1 className="text-2xl font-bold">Vagas de TI</h1>
+      <p className="mt-1 text-sm text-slate-600">Do estágio à liderança, em CLT e PJ. Filtre pelo seu nível e veja o que falta para chegar lá.</p>
 
       {!usuario ? (
         <p className="mt-2 rounded-md bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
@@ -151,9 +158,13 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
       <form className="mt-5 space-y-3" method="get">
         <div className="flex flex-wrap items-end gap-3">
           <input name="busca" defaultValue={filtros.busca} placeholder="Buscar por cargo ou empresa" className={`${seletor} min-w-60 flex-1`} />
-          <select name="tipo" defaultValue={filtros.tipo ?? ""} className={seletor} aria-label="Tipo de vaga">
-            <option value="">Todos os tipos</option>
+          <select name="tipo" defaultValue={tipo ?? ""} className={seletor} aria-label="Nível da vaga">
+            <option value="">Todos os níveis</option>
             {Object.entries(ROTULO_TIPO).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+          </select>
+          <select name="contrato" defaultValue={contrato ?? ""} className={seletor} aria-label="Tipo de contratação">
+            <option value="">CLT ou PJ</option>
+            {FILTROS_DE_CONTRATO.map((v) => <option key={v} value={v}>{ROTULO_CONTRATO[v]}</option>)}
           </select>
           <select name="modalidade" defaultValue={filtros.modalidade ?? ""} className={seletor} aria-label="Modalidade">
             <option value="">Qualquer modalidade</option>
@@ -228,9 +239,9 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
         </div>
       </form>
 
-      {(temRegiao || filtros.tipo || filtros.area || salarioMinimo) && (
+      {(temRegiao || tipo || contrato || filtros.area || salarioMinimo) && (
         <p className="mt-3 text-sm">
-          <Link href={`/alertas?${new URLSearchParams(Object.entries({ uf: filtros.uf, cidade: filtros.cidade, tipo: filtros.tipo, area: filtros.area, salario: filtros.salario, somenteRegiao: filtros.somenteRegiao }).filter((e): e is [string, string] => !!e[1]))}`}
+          <Link href={`/alertas?${new URLSearchParams(Object.entries({ uf: filtros.uf, cidade: filtros.cidade, tipo, contrato, area: filtros.area, salario: filtros.salario, somenteRegiao: filtros.somenteRegiao }).filter((e): e is [string, string] => !!e[1]))}`}
             className="font-medium text-indigo-700 underline">
             🔔 Receber por e-mail as vagas novas com estes filtros
           </Link>

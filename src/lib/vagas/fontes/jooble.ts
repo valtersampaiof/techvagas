@@ -5,15 +5,10 @@ import type { FonteExterna, VagaExterna } from "../tipos";
 
 /** API oficial da Jooble (https://jooble.org/api/about). Exige uma chave gratuita, pedida por formulário. */
 const TERMOS = [
-  "estágio ti",
-  "estagiário",
-  "tecnologia da informação",
-  "analista de suporte",
-  "analista de dados júnior",
-  "segurança da informação júnior",
-  "desenvolvedor junior",
-  "junior developer",
-  "software engineer intern",
+  "estágio ti", "estagiário", "tecnologia da informação", "analista de suporte", "analista de dados", "segurança da informação",
+  "desenvolvedor", "desenvolvedor junior", "desenvolvedor pleno", "desenvolvedor senior", "software engineer", "engenheiro de software",
+  "analista de sistemas", "cientista de dados", "engenheiro de dados", "devops", "cloud", "arquiteto de software", "tech lead",
+  "infraestrutura ti", "qa", "scrum master", "product owner", "gerente de ti",
 ];
 
 type VagaJooble = {

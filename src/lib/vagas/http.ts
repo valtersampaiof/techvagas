@@ -5,7 +5,7 @@ export async function pedirJson(url: string, init: RequestInit = {}): Promise<un
   const resposta = await fetch(url, {
     ...init,
     signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
-    headers: { Accept: "application/json", "User-Agent": "techvagas (vagas para estudantes de TI)", ...init.headers },
+    headers: { Accept: "application/json", "User-Agent": "techvagas (vagas de TI e cursos)", ...init.headers },
   });
   if (!resposta.ok) {
     const dica =
@@ -25,13 +25,13 @@ export async function pedirJson(url: string, init: RequestInit = {}): Promise<un
   }
 }
 
-export const pausa = () => new Promise<void>((r) => setTimeout(r, PAUSA_ENTRE_CHAMADAS_MS));
+export const pausa = (ms: number = PAUSA_ENTRE_CHAMADAS_MS) => new Promise<void>((r) => setTimeout(r, ms));
 
 /**
  * Roda uma busca para cada item (um termo, ou um termo com filtros) e junta os resultados. Uma busca que
  * falha não derruba as outras; só se TODAS falharem o erro sobe (a fonte inteira está com problema).
  */
-export async function buscarPorTermos<A, T>(itens: A[], buscar: (item: A) => Promise<T[]>): Promise<T[]> {
+export async function buscarPorTermos<A, T>(itens: A[], buscar: (item: A) => Promise<T[]>, pausaMs: number = PAUSA_ENTRE_CHAMADAS_MS): Promise<T[]> {
   const todos: T[] = [];
   let ultimoErro: unknown = null;
   let falhas = 0;
@@ -42,7 +42,7 @@ export async function buscarPorTermos<A, T>(itens: A[], buscar: (item: A) => Pro
       falhas++;
       ultimoErro = e;
     }
-    await pausa();
+    await pausa(pausaMs);
   }
   if (falhas === itens.length && ultimoErro) throw ultimoErro;
   return todos;

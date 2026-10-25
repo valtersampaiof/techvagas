@@ -1,6 +1,8 @@
 import type { Nivel } from "../niveis";
 import { CURSOS_EXTRA } from "./cursos-extra";
+import { CURSOS_GESTAO } from "./cursos-gestao";
 import { CURSOS_MAIS } from "./cursos-mais";
+import { CURSOS_PLENO_SENIOR, ETIQUETAS_EXTRAS } from "./cursos-pleno-senior";
 
 export type CursoBase = {
   titulo: string;
@@ -565,4 +567,14 @@ const CURSOS_BASE: CursoBase[] = [
   },
 ];
 
-export const CURSOS: CursoBase[] = [...CURSOS_BASE, ...CURSOS_EXTRA, ...CURSOS_MAIS];
+/** Soma as habilidades novas (`ETIQUETAS_EXTRAS`) aos cursos que já existiam; o teste do catálogo confere que cada chave existe. */
+function comEtiquetasExtras(curso: CursoBase): CursoBase {
+  const extras = ETIQUETAS_EXTRAS[`${curso.instituicao}|${curso.titulo}`];
+  if (!extras) return curso;
+  const novas = extras.filter((e) => !curso.habilidades.some(([slug]) => slug === e.slug));
+  const primeiras = novas.filter((e) => e.principal).map((e): [string, Nivel] => [e.slug, e.nivel]);
+  const demais = novas.filter((e) => !e.principal).map((e): [string, Nivel] => [e.slug, e.nivel]);
+  return { ...curso, habilidades: [...primeiras, ...curso.habilidades, ...demais] };
+}
+
+export const CURSOS: CursoBase[] = [...CURSOS_BASE, ...CURSOS_EXTRA, ...CURSOS_MAIS, ...CURSOS_PLENO_SENIOR, ...CURSOS_GESTAO].map(comEtiquetasExtras);

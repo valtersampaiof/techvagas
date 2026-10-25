@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HABILIDADES } from "@/lib/dados/habilidades";
-import { detectarModalidade, detectarTipo, escolherArea, extrairRequisitos, normalizarVaga } from "@/lib/vagas/normalizar";
+import { anosDeExperiencia, detectarContrato, detectarModalidade, detectarTipo, escolherArea, extrairRequisitos, normalizarVaga, pareceDeTI } from "@/lib/vagas/normalizar";
 import { espacarFrases, htmlParaTexto, markdownParaTexto, truncar, urlSegura } from "@/lib/vagas/texto";
 import type { VagaExterna } from "@/lib/vagas/tipos";
 
@@ -62,26 +62,130 @@ describe("texto", () => {
 
 describe("detectarTipo", () => {
   it.each([
-    ["Estágio em Desenvolvimento", [], "estagio"],
-    ["Estagiário de Dados", [], "estagio"],
-    ["Software Engineering Intern", [], "estagio"],
-    ["Programa de Trainee em TI", [], "trainee"],
-    ["Desenvolvedor Backend Júnior", [], "junior"],
-    ["Analista de Suporte Jr.", [], "junior"],
-    ["Desenvolvedor Backend", ["Júnior"], "junior"],
-    ["Desenvolvedor", ["Estágio"], "estagio"],
-  ])("%s -> %s", (titulo, rotulos, esperado) => {
-    expect(detectarTipo(titulo as string, rotulos as string[])).toBe(esperado);
+    ["Estágio em Desenvolvimento", [], "", "estagio"],
+    ["Estagiário de Dados", [], "", "estagio"],
+    ["Software Engineering Intern", [], "", "estagio"],
+    ["Programa de Trainee em TI", [], "", "trainee"],
+    ["Desenvolvedor Backend Júnior", [], "", "junior"],
+    ["Analista de Suporte Jr.", [], "", "junior"],
+    ["Desenvolvedor Backend", ["Júnior"], "", "junior"],
+    ["Desenvolvedor", ["Estágio"], "", "estagio"],
+    ["Engenheiro de Software Pleno", [], "", "pleno"],
+    ["Desenvolvedor Java Pl", [], "", "pleno"],
+    ["Analista de Sistemas Semi-Sênior", [], "", "pleno"],
+    ["Desenvolvedor Sênior", [], "", "senior"],
+    ["Senior Software Engineer", [], "", "senior"],
+    ["Desenvolvedor Backend Sr.", [], "", "senior"],
+    ["Arquiteto de Soluções", [], "", "senior"],
+    ["Especialista em Segurança da Informação", [], "", "senior"],
+    ["Tech Lead Java", [], "", "lideranca"],
+    ["Gerente de Infraestrutura de TI", [], "", "lideranca"],
+    ["Coordenador de Desenvolvimento", [], "", "lideranca"],
+    ["Engineering Manager", [], "", "lideranca"],
+  ])("%s %j -> %s", (titulo, rotulos, descricao, esperado) => {
+    expect(detectarTipo(titulo as string, rotulos as string[], descricao as string)).toBe(esperado);
+  });
+
+  it("o título vale mais que as etiquetas da fonte (muitas fontes marcam Júnior e Pleno juntos)", () => {
+    expect(detectarTipo("Engenheiro de Software Pleno", ["Júnior"])).toBe("pleno");
+    expect(detectarTipo("Desenvolvedor Backend", ["Pleno"])).toBe("pleno");
+  });
+
+  it("com mais de um nível no cargo ('Júnior/Pleno'), vale o menor", () => {
+    expect(detectarTipo("Desenvolvedor Júnior/Pleno", [])).toBe("junior");
+    expect(detectarTipo("Analista Pleno ou Sênior", [])).toBe("pleno");
+  });
+
+  it("'PL/SQL' não é pleno e 'SR 1067' é código de vaga, não sênior", () => {
+    expect(detectarTipo("Desenvolvedor PL/SQL", [])).toBe("indefinido");
+    expect(detectarTipo("Analista de Suporte Cloud SR 1067", [])).toBe("indefinido");
+  });
+
+  it("numeração romana no fim do cargo indica o nível: I júnior, II pleno, III sênior", () => {
+    expect(detectarTipo("Analista de Sistemas I", [])).toBe("junior");
+    expect(detectarTipo("Engenheiro de Dados II", [])).toBe("pleno");
+    expect(detectarTipo("Desenvolvedor Backend III", [])).toBe("senior");
+    expect(detectarTipo("Analista de Sistemas II (Remoto)", [])).toBe("pleno");
+    expect(detectarTipo("Hering | Desenvolvedor(a) Full Stack I (Blumenau/SC)", [])).toBe("junior");
+    expect(detectarTipo("Analista de Dados III | Investimentos", [])).toBe("senior");
+    // "Júnior" escrito vence o número
+    expect(detectarTipo("Software Engineer .NET II (Junior)", [])).toBe("junior");
+    // sem cargo de profissional, o número não conta
+    expect(detectarTipo("Programa Fase II", [])).toBe("indefinido");
+  });
+
+  it("sem nível no cargo, os anos de experiência do texto decidem", () => {
+    expect(detectarTipo("Desenvolvedor Backend", [], "Experiência de 5 anos com Java.")).toBe("senior");
+    expect(detectarTipo("Desenvolvedor Backend", [], "Pelo menos 3 anos de experiência com Java.")).toBe("pleno");
+    expect(detectarTipo("Desenvolvedor Backend", [], "1 ano de experiência com Java.")).toBe("junior");
+    expect(detectarTipo("Desenvolvedor Backend", [], "Não é necessário ter experiência prévia.")).toBe("junior");
+    expect(detectarTipo("Desenvolvedor Backend", [], "3+ years of experience with Java")).toBe("pleno");
+    expect(detectarTipo("Desenvolvedor Backend", [], "Você sabe Java e SQL.")).toBe("indefinido");
+  });
+});
+
+describe("anosDeExperiencia", () => {
+  it.each([
+    ["Experiência mínima de 4 anos em desenvolvimento", 4],
+    ["Ter 5+ anos de experiência com Java", 5],
+    ["De 3 a 5 anos de experiência", 3],
+    ["Experiência com Python por pelo menos 2 anos", 2],
+    ["5 years of professional experience", 5],
+    ["Experience: 7+ years in software engineering", 7],
+    ["Sem experiência prévia", 0],
+    ["Conhecimento em Java", null],
+    ["Há 30 anos no mercado, a empresa oferece experiência", null],
+  ])("%s -> %s", (texto, esperado) => {
+    expect(anosDeExperiencia(texto)).toBe(esperado);
+  });
+
+  it("vale o maior número entre os trechos", () => {
+    expect(anosDeExperiencia("2 anos de experiência com Python e 6 anos de experiência com Java")).toBe(6);
+  });
+});
+
+describe("detectarContrato", () => {
+  const c = (descricao: string, extra: { titulo?: string; contrato?: "clt" | "pj" } = {}, tipo: "junior" | "estagio" = "junior") =>
+    detectarContrato({ titulo: "Desenvolvedor", descricao, rotulos: [], ...extra }, tipo);
+
+  it("lê CLT e PJ do anúncio, inclusive quando aceita os dois", () => {
+    expect(c("Contratação CLT com benefícios.")).toBe("clt");
+    expect(c("Regime de contratação: PJ.")).toBe("pj");
+    expect(c("Modelo de contratação: Pessoa Jurídica")).toBe("pj");
+    expect(c("Contratação CLT ou PJ, a combinar.")).toBe("clt_pj");
+    expect(c("Vaga efetiva, carteira assinada.")).toBe("clt");
+  });
+
+  it("sem menção, fica vazio, em vez de chutar", () => {
+    expect(c("Trabalho com Python.")).toBe("");
+    expect(c("A CNPJ da empresa é aberta ao público.")).toBe("");
+  });
+
+  it("estágio é estágio; o que a fonte informa tem prioridade", () => {
+    expect(c("Bolsa de R$ 1.500", {}, "estagio")).toBe("estagio");
+    expect(c("Contratação CLT.", { contrato: "pj" })).toBe("pj");
+  });
+});
+
+describe("pareceDeTI (cargos de todos os níveis)", () => {
+  it.each([
+    "Engenheiro de Software Sênior", "Senior Backend Engineer", "Arquiteto de Soluções Cloud", "Tech Lead Java", "Engenheiro DevOps Pleno",
+    "SRE - Site Reliability Engineer", "Analista de Infraestrutura Pleno", "Administrador de Banco de Dados (DBA)", "DBA Oracle",
+    "Cientista de Dados Sênior", "Engenheiro de Dados", "Analista de BI", "Analista de Segurança da Informação", "Pentester",
+    "Scrum Master", "Product Owner", "Gerente de TI", "Coordenador de Infraestrutura de TI", "CTO", "Analista de Redes",
+    "Administrador de Redes", "Analista SAP ABAP", "Consultor SAP FI", "Desenvolvedor Mobile Flutter", "Full Stack Developer",
+    "Engenheiro de Qualidade de Software", "QA Automation Engineer", "UX Designer", "Machine Learning Engineer", "Analista de NOC",
+    "Gerente de Engenharia de Software", "Analista de Sistemas Pleno", "Platform Engineer", "Cloud Engineer", "Software Architect",
+  ])("%s é de TI", (titulo) => {
+    expect(pareceDeTI(titulo)).toBe(true);
   });
 
   it.each([
-    ["Desenvolvedor Sênior", []],
-    ["Engenheiro de Software Pleno", ["Júnior"]],
-    ["Tech Lead Java", []],
-    ["Desenvolvedor Backend", ["Pleno"]],
-    ["Desenvolvedor Backend", []],
-  ])("descarta %s", (titulo, rotulos) => {
-    expect(detectarTipo(titulo, rotulos)).toBeNull();
+    "Gerente de Contas", "Business Developer", "Sales Development Representative", "Analista de Redes Sociais", "Engenheiro Civil",
+    "Engenheiro de Produção", "Coordenador de Logística", "Diretor Comercial", "Analista de Infraestrutura Viária", "Product Developer Têxtil",
+    "Desenvolvedor de Negócios", "Analista Financeiro Pleno", "Head de Vendas", "Gerente de Marketing", "Analista de Qualidade Industrial",
+  ])("%s não é de TI", (titulo) => {
+    expect(pareceDeTI(titulo)).toBe(false);
   });
 });
 
@@ -115,6 +219,23 @@ describe("extrairRequisitos", () => {
   });
 });
 
+describe("escolherArea: o cargo vale mais que a lista de tecnologias", () => {
+  const muitaInfra = ["linux", "redes", "cloud", "docker", "kubernetes", "ci-cd", "terraform", "monitoramento", "python"];
+  it("analista de segurança que cita infraestrutura continua sendo de Segurança", () => {
+    expect(escolherArea(muitaInfra, HABILIDADES, "Analista de Segurança da Informação Sênior")).toBe("Segurança");
+  });
+  it("engenheiro de dados que cita infraestrutura continua sendo de Dados", () => {
+    expect(escolherArea(["python", "sql", ...muitaInfra], HABILIDADES, "Engenheiro de Dados Senior")).toBe("Dados");
+  });
+  it("engenheiro de software que cita muita infraestrutura continua sendo de programação", () => {
+    expect(escolherArea(["java", "api-rest", ...muitaInfra], HABILIDADES, "Engenheiro de Software Sr. (Java)")).toBe("Programação");
+    expect(escolherArea(["react", "typescript", ...muitaInfra], HABILIDADES, "Desenvolvedor Front-end Pleno")).toBe("Desenvolvimento web");
+  });
+  it("sem cargo claro, vale a área das tecnologias", () => {
+    expect(escolherArea(muitaInfra, HABILIDADES, "Especialista Sênior")).toBe("Infraestrutura");
+  });
+});
+
 describe("escolherArea", () => {
   it("usa a área mais frequente e ignora as genéricas", () => {
     expect(escolherArea(["git", "python", "java", "ingles"], HABILIDADES)).toBe("Programação");
@@ -136,8 +257,39 @@ describe("normalizarVaga", () => {
     expect(n.requisitos.every((r) => r.nivelMinimo === "iniciante")).toBe(true);
   });
 
-  it("descarta vaga que não é para iniciantes", () => {
-    expect(normalizarVaga(vaga({ titulo: "Desenvolvedor Sênior" }), HABILIDADES)).toBeNull();
+  it("aceita vagas de todos os níveis; o nível pedido de cada habilidade acompanha o nível da vaga", () => {
+    const pleno = normalizarVaga(vaga({ titulo: "Desenvolvedor Pleno" }), HABILIDADES)!;
+    expect(pleno.tipo).toBe("pleno");
+    expect(pleno.requisitos.every((r) => r.nivelMinimo === "intermediario")).toBe(true);
+
+    const senior = normalizarVaga(vaga({ titulo: "Desenvolvedor Sênior", descricao: "Python, SQL, Git e inglês." }), HABILIDADES)!;
+    expect(senior.tipo).toBe("senior");
+    const nivel = Object.fromEntries(senior.requisitos.map((r) => [r.slug, r.nivelMinimo]));
+    expect(nivel).toMatchObject({ python: "avancado", sql: "avancado", git: "intermediario", ingles: "intermediario" });
+  });
+
+  it("vaga sem nível no cargo nem no texto fica como 'indefinido', com requisitos de iniciante", () => {
+    const n = normalizarVaga(vaga({ titulo: "Desenvolvedor Python" }), HABILIDADES)!;
+    expect(n.tipo).toBe("indefinido");
+    expect(n.requisitos.every((r) => r.nivelMinimo === "iniciante")).toBe(true);
+  });
+
+  it("grava o contrato lido do anúncio", () => {
+    expect(normalizarVaga(vaga({ descricao: "Python e SQL. Contratação PJ." }), HABILIDADES)!.contrato).toBe("pj");
+    expect(normalizarVaga(vaga({ titulo: "Estágio em Dados", descricao: "Python e SQL." }), HABILIDADES)!.contrato).toBe("estagio");
+    expect(normalizarVaga(vaga({ descricao: "Python e SQL." }), HABILIDADES)!.contrato).toBe("");
+  });
+
+  it("descarta banco de talentos e cadastro reserva, de qualquer fonte", () => {
+    for (const titulo of ["[BANCO DE TALENTOS] Desenvolvedor(a) Júnior", "BANCO DE TALENTOS - Cientista de Dados Sr", "Exclusive Talent Pool - PcD", "Cadastro Reserva - Analista de Sistemas"]) {
+      expect(normalizarVaga(vaga({ titulo, descricao: "Python e SQL." }), HABILIDADES), titulo).toBeNull();
+    }
+  });
+
+  it("'Desenvolvedor de Mercado', de Hardware ou de Negócios não é desenvolvedor de software", () => {
+    for (const titulo of ["Desenvolvedor(a) de Mercado | Varejo 5G", "Desenvolvedor de Hardware", "Desenvolvedor(a) de Negócios", "Desenvolvedor de Canais"]) {
+      expect(normalizarVaga(vaga({ titulo, descricao: "Prospecção de clientes e vendas." }), HABILIDADES), titulo).toBeNull();
+    }
   });
 
   it("descarta vaga sem nenhuma habilidade reconhecida", () => {

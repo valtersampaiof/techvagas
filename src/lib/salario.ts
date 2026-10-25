@@ -9,10 +9,10 @@ export type Salario = {
   origem: "fonte" | "texto";
 };
 
-// Faixa plausível para um salário/bolsa MENSAL de quem está começando. Fora dela, o valor quase certamente é
+// Faixa plausível para um salário/bolsa MENSAL, de bolsa de estágio a cargo de liderança. Fora dela, o valor quase certamente é
 // erro (hora, ano, centavos) ou outra coisa (valor de empresa, de apólice...), e é melhor não mostrar nada.
 const MENSAL_MINIMO = 300;
-const MENSAL_MAXIMO = 30_000;
+const MENSAL_MAXIMO = 60_000;
 const plausivel = (v: number) => Number.isFinite(v) && v >= MENSAL_MINIMO && v <= MENSAL_MAXIMO;
 
 /** "1.800,00" → 1800; "1800" → 1800; "1.800" → 1800; "3,4" → 3.4; o que não for número → null. */

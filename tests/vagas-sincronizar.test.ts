@@ -50,9 +50,9 @@ afterAll(async () => {
 });
 
 describe("sincronizarVagas", () => {
-  it("salva as vagas para iniciantes e descarta as outras", async () => {
+  it("salva as vagas de TI de todos os níveis e descarta as que não são de TI", async () => {
     const [r] = await sincronizarVagas(db, [
-      fonte(() => [vaga("1", "Estágio em Dados"), vaga("2", "Desenvolvedor Sênior"), vaga("3", "Dev Python Júnior")]),
+      fonte(() => [vaga("1", "Estágio em Dados"), vaga("2", "Analista Contábil Pleno", "Conciliações e fechamento."), vaga("3", "Dev Python Júnior")]),
     ]);
     expect(r).toMatchObject({ situacao: "ok", recebidas: 3, salvas: 2, descartadas: 1 });
 
@@ -96,8 +96,8 @@ describe("sincronizarVagas", () => {
     await sincronizarVagas(db, [carreira(() => [outraEmpresa("c1")])]);
     expect(await db.vaga.count({ where: { origem: "carreira:teste:acme" } })).toBe(1);
 
-    // Só sobrou vaga de nível sênior: sem a marca, nada é apagado (poderia ser falha da fonte)...
-    const sobrou = () => [{ ...outraEmpresa("c2"), titulo: "Desenvolvedor Sênior" }];
+    // Só sobrou vaga que não é de TI: sem a marca, nada é apagado (poderia ser falha da fonte)...
+    const sobrou = () => [{ ...outraEmpresa("c2"), titulo: "Analista Contábil Pleno", descricao: "Conciliações e fechamento." }];
     await sincronizarVagas(db, [carreira(sobrou)]);
     expect(await db.vaga.count({ where: { origem: "carreira:teste:acme" } })).toBe(1);
 

@@ -1,12 +1,12 @@
 # TechVagas
 
-Site de vagas de TI para jovens estudantes no Brasil (estágio, trainee e júnior). Além de buscar vagas, ele
-compara o perfil do estudante com os requisitos de cada vaga e indica **cursos gratuitos e pagos, com certificado**,
-para fechar o que falta.
+Site de vagas de TI no Brasil, **do estágio à liderança, em CLT e PJ**. Além de buscar vagas, ele compara o perfil de
+quem procura com os requisitos de cada vaga e indica **cursos gratuitos e pagos, com certificado**, para fechar o que falta.
 
-Exemplo: a vaga pede *Segurança da Informação* e o estudante não tem → o site mostra "60% compatível — falta:
+Exemplo: a vaga pede *Segurança da Informação* e a pessoa não tem → o site mostra "60% compatível — falta:
 Segurança da Informação" e sugere, por exemplo, o **Certified in Cybersecurity (ISC2)** (gratuito) e o
-**Certificado Profissional Google de Cibersegurança** (pago).
+**Certificado Profissional Google de Cibersegurança** (pago). Numa vaga sênior que pede *Kubernetes*, os cursos
+indicados são os que levam até o nível avançado, como o **CKA**.
 
 ## Como rodar
 
@@ -20,18 +20,22 @@ npm run dev                 # http://localhost:3000
 
 Outros comandos: `npm test` (testes), `npm run lint`, `npm run build`, `npm run alertas:enviar` (veja "Alertas por e-mail").
 
+**Depois de atualizar o código** (`git pull`), rode `npm install` e `npm run db:preparar` de novo: o banco ganhou colunas
+(contratação da vaga e dos alertas) e o catálogo ganhou habilidades e cursos. Sem isso, `npm run vagas:atualizar` avisa e
+para, em vez de salvar vagas sem os requisitos novos. Os dados já gravados são mantidos.
+
 ## O que tem
 
 | Página | Função |
 | --- | --- |
 | `/` | Apresentação |
-| `/vagas` | Lista com filtros (tipo, modalidade, área, **estado e cidade**, **data de publicação**, **salário/bolsa mínimo**), ordenação (compatibilidade, mais recentes, maior salário), % de compatibilidade (quando logado e com perfil) e paginação |
+| `/vagas` | Lista com filtros (**nível**, **contratação CLT/PJ**, modalidade, área, **estado e cidade**, **data de publicação**, **salário/bolsa mínimo**), ordenação (compatibilidade, mais recentes, maior salário), % de compatibilidade (quando logado e com perfil) e paginação |
 | `/vagas/[id]` | Requisitos (✔ tem / ✘ falta) e cursos para cada lacuna. **Passe o mouse (ou toque) no nome de uma habilidade** para ver até 3 cursos gratuitos dela num mini quadro, sem sair da página |
 | `/cursos` | Catálogo com busca por texto e filtros (habilidade, preço, nível em que começa, **até onde leva**, idioma, duração, certificado), ordenação e paginação |
 | `/salvas` | Vagas que a pessoa marcou com a estrela (★). Se uma vaga salva sai da fonte, ela continua na lista, marcada como "possivelmente encerrada" |
-| `/alertas` | Alertas por e-mail: a pessoa escolhe estado, cidade, tipo, área e salário mínimo e recebe um aviso quando aparecem vagas **novas** assim |
+| `/alertas` | Alertas por e-mail: a pessoa escolhe estado, cidade, nível, contratação, área e salário mínimo e recebe um aviso quando aparecem vagas **novas** assim |
 | `/perfil` | Envio do currículo em PDF, revisão e edição das habilidades |
-| `/entrar`, `/cadastrar` | Conta de estudante (e-mail e senha) |
+| `/entrar`, `/cadastrar` | Conta (e-mail e senha) |
 
 ## Vagas reais
 
@@ -40,12 +44,12 @@ ele busca vagas reais, guarda no banco e **esconde as de exemplo** assim que hou
 
 | Fonte | Precisa de chave? | O que traz |
 | --- | --- | --- |
-| **Sites de empresas** (Greenhouse, Lever, Ashby) | Não | Vagas direto da página de carreiras de 19 empresas brasileiras de tecnologia e finanças (Stone, BTG Pactual, C6 Bank, Inter, XP, QuintoAndar, Nubank, CI&T...). **API pública e documentada** das três plataformas, feita para mostrar vagas em outros sites. Como são bancos e fintechs com todo tipo de vaga, só entram as de cargo ou setor de tecnologia. Rende pouco (em outubro/2026: 455 vagas lidas, 5 para iniciantes), mas são vagas que as outras fontes não trazem, e o número sobe na época dos programas de estágio |
-| **Gupy** | Não | A maior plataforma de recrutamento do Brasil, com muito estágio e trainee. **Não é API oficial**: usa o mesmo endereço da busca do site `portal.gupy.io` (o `robots.txt` permite). Traz a descrição completa da vaga, então a leitura de requisitos é bem melhor. Em outubro/2026: 282 recebidas, 128 aproveitadas |
-| **Adzuna** | Sim (gratuita) | Vagas do Brasil de vários sites. É a fonte principal; testada com dados reais (227 vagas recebidas, 178 aproveitadas numa execução) |
-| **Jooble** | Sim (gratuita) | Funciona (testado com chave real), mas o índice do Brasil é pequeno e quase só traz vagas sênior de bancos e indústrias: numa execução, 70 recebidas e nenhuma para iniciante de TI. É só um complemento |
-| **Remotive** | Não | Vagas 100% remotas (em inglês) abertas a quem mora no Brasil. A API pública devolve poucas vagas (em outubro/2026: 9 por categoria, nenhuma para iniciantes), então é só um complemento |
-| **Comunidades no GitHub** | Não (token opcional) | Vagas das comunidades brasileiras (`frontendbr/vagas`, `backend-br/vagas`, `qa-brasil/vagas`, `datascience-br/vagas`, `androiddevbr/vagas`) |
+| **Sites de empresas** (Greenhouse, Lever, Ashby) | Não | Vagas direto da página de carreiras de 39 empresas (Stone, BTG Pactual, C6 Bank, Inter, XP, QuintoAndar, Nubank, CI&T, e estrangeiras com vagas no Brasil, como Datadog, Databricks e GitLab). **API pública e documentada** das três plataformas, feita para mostrar vagas em outros sites. Como são bancos e fintechs com todo tipo de vaga, só entram as de cargo ou setor de tecnologia, no Brasil. Em outubro/2026: cerca de 470 vagas, de todos os níveis |
+| **Gupy** | Não | A maior plataforma de recrutamento do Brasil. **Não é API oficial**: usa o mesmo endereço da busca do site `portal.gupy.io` (o `robots.txt` permite). Traz a descrição completa da vaga, então a leitura de requisitos é bem melhor. Em outubro/2026: cerca de 1.400 vagas de TI, de estágio a liderança. Só entram vagas de emprego (efetivo/CLT, PJ, estágio, trainee) |
+| **Adzuna** | Sim (gratuita) | Vagas do Brasil de vários sites. Em outubro/2026: cerca de 1.050 vagas de TI (a descrição vem resumida, então há menos requisitos identificados) |
+| **Jooble** | Sim (gratuita) | Funciona (testado com chave real), mas o índice do Brasil é pequeno: numa execução, 95 recebidas e 18 de TI. É só um complemento |
+| **Remotive** | Não | Vagas 100% remotas (em inglês) abertas a quem mora no Brasil. A API pública devolve poucas vagas, então é só um complemento |
+| **Comunidades no GitHub** | Não (token opcional) | Vagas das comunidades brasileiras (`frontendbr/vagas`, `backend-br/vagas`, `qa-brasil/vagas`, `datascience-br/vagas`, `androiddevbr/vagas`, `react-brasil/vagas`) |
 
 Detalhe do Jooble: o campo `location` da API precisa ser `"Brazil"` (em inglês). Com `"Brasil"` ela devolve zero vagas
 (o código já usa o valor certo). O endereço padrão é `jooble.org`; para trocar, defina `JOOBLE_HOST` no `.env`.
@@ -58,23 +62,25 @@ Como conseguir as chaves (depois, cole no arquivo `.env`):
 - **GitHub (opcional):** sem token vale o limite padrão, que basta para uma atualização. Se quiser mais, crie um token
   em https://github.com/settings/tokens (sem marcar nenhuma permissão) e cole em `GITHUB_TOKEN`.
 
-**Sobre a Gupy:** como o endereço é não oficial, ele pode mudar ou ser bloqueado sem aviso. Por isso o volume é pequeno
-(cerca de 40 consultas por execução, com pausa entre elas), o programa se identifica como `techvagas` e cada vaga mostra a
-fonte e leva de volta à página original. Se parar de funcionar, as outras fontes continuam. Ela ignora "banco de
-talentos", vagas com prazo de inscrição vencido e vagas sem prazo com mais de 6 meses.
+**Sobre a Gupy:** como o endereço é não oficial, ele pode mudar ou ser bloqueado sem aviso. Por isso o volume é moderado
+(cerca de 130 consultas por execução, a maioria de uma página só, com pausa entre elas), o programa se identifica como
+`techvagas` e cada vaga mostra a fonte e leva de volta à página original. Se parar de funcionar, as outras fontes continuam.
+Ela ignora "banco de talentos", vagas com prazo de inscrição vencido, vagas sem prazo com mais de 6 meses e as de outros
+países da América Latina (a Gupy as publica junto; o site reconhece pelo idioma e pela cidade). Vagas temporárias, de
+aprendiz e de parceria não entram: o site mostra só vaga de emprego.
 
 Quando a mesma vaga (mesmo cargo na mesma empresa) vem de duas fontes, fica só a da fonte que aparece primeiro na lista
 (`src/lib/vagas/fontes/index.ts`: sites de empresas, Gupy, Adzuna, Jooble, Remotive, GitHub).
 
 O que o comando faz com cada vaga:
 
-- guarda **só estágio, trainee e júnior** (descarta pleno, sênior, líder etc.);
+- guarda as vagas de TI **de todos os níveis** (estágio, trainee, júnior, pleno, sênior e liderança) e descobre o nível e a contratação (veja "Níveis e contratação");
 - descobre as habilidades pedidas lendo o texto do anúncio; o que vem depois de "diferenciais/desejável" vira
-  requisito *desejável*;
+  requisito *desejável*, e o nível pedido de cada habilidade acompanha o da vaga (iniciante, intermediário, avançado);
 - deduz habilidades básicas pelo cargo (ex.: "Front-end" implica HTML/CSS e JavaScript; "Analista de Dados" implica análise de dados);
 - mantém vagas que claramente são de TI mesmo sem tecnologias no texto (ex.: "Estágio em Tecnologia da Informação"), mas **sem
   requisitos**: o site não calcula compatibilidade nem indica cursos para elas, e avisa isso na tela;
-- descarta vagas que não são de TI (ex.: "Estágio para Direito", "Desenvolvedor de Negócios"). Se o cargo não indica
+- descarta banco de talentos e vagas que não são de TI (ex.: "Estágio para Direito", "Desenvolvedor de Negócios", "Analista de Redes Sociais"). Se o cargo não indica
   tecnologia, o texto precisa pedir pelo menos duas habilidades técnicas fortes (inglês, suporte, metodologias ágeis e
   análise de dados sozinhos não bastam);
 - atualiza as que já existem e **remove as que saíram do ar** (nunca mexe nas vagas de outras fontes);
@@ -91,6 +97,27 @@ não são afetadas. A vaga mostra "Site da empresa" como fonte.
 **Sites que avaliei e não usei:** LinkedIn, Indeed, Glassdoor, Catho, Vagas.com e InfoJobs não oferecem API pública
 para isso, e a leitura automática das páginas costuma ser vedada pelos termos de uso (confira antes de tentar). O Trampos é quase todo de marketing e criação (10
 vagas de TI) e o Programathor só tinha 32 vagas abertas, 3 para iniciantes, sem API. Vale rever se algum deles abrir uma API.
+
+## Níveis e contratação
+
+Cada vaga recebe um **nível** (`src/lib/vagas/normalizar.ts`, `detectarTipo`): estágio, trainee, júnior, pleno, sênior,
+liderança (gerente, coordenador, head, tech lead) ou **nível não informado**. A ordem de decisão é:
+
+1. o **cargo** ("Engenheiro de Software Sênior", "Dev Pl", "Analista de Sistemas II"; com mais de um nível, como
+   "Júnior/Pleno", vale o menor; numeração romana: I júnior, II pleno, III em diante sênior);
+2. as **etiquetas da fonte** (ex.: "Intern", "Júnior");
+3. os **anos de experiência** pedidos no texto: até 1 ano é júnior, de 2 a 4 pleno, 5 ou mais sênior ("sem experiência" é júnior);
+4. sem nenhum sinal, **nível não informado**. Nesse caso a tela avisa e os cursos indicados partem do nível iniciante.
+
+O nível é uma **estimativa automática**; confira no anúncio. O nível da vaga define o nível pedido de cada habilidade:
+júnior pede iniciante, pleno pede intermediário e sênior ou liderança pedem avançado (menos Git, inglês, métodos ágeis e
+suporte, que ficam no intermediário). Por isso, numa vaga sênior que pede Kubernetes, o site indica os cursos que levam
+até o avançado.
+
+A **contratação** (CLT, PJ, CLT ou PJ) vem do que a fonte informa (a Gupy diz se é efetivo ou pessoa jurídica) ou do que o
+anúncio escreve ("CLT", "PJ", "pessoa jurídica"). Se o anúncio não diz, o campo fica vazio e a tela não mostra selo:
+o site prefere não informar a chutar. Ao filtrar por CLT ou PJ, as vagas que aceitam os dois entram nas duas, e as que não
+informam ficam de fora. Os salários aceitos vão de R$ 300 a R$ 60.000 por mês.
 
 Para incluir outra fonte, crie um arquivo em `src/lib/vagas/fontes/` que cumpra a interface `FonteExterna`
 (`src/lib/vagas/tipos.ts`) e acrescente-o em `src/lib/vagas/fontes/index.ts`.
@@ -166,9 +193,10 @@ Cuidados que já estão no código:
 ## Atenção antes de publicar
 
 - As **vagas de exemplo são fictícias** (`src/lib/dados/vagas.ts`).
-- Em `src/lib/dados/cursos.ts`, `cursos-extra.ts` e `cursos-mais.ts` (277 cursos, 27 habilidades), **gratuidade, preço, carga horária e
-  certificado precisam ser conferidos** no site de cada instituição. Vários links apontam para a página geral do
-  provedor porque o endereço de cada curso muda.
+- Em `src/lib/dados/cursos*.ts` (419 cursos, 46 habilidades), **gratuidade, preço, carga horária e certificado precisam
+  ser conferidos** no site de cada instituição. Vários links apontam para a página geral do provedor porque o endereço
+  de cada curso muda. Os links foram testados em 25/10/2026: dos 369 endereços diferentes, 330 responderam e os demais
+  ou bloqueiam programas automáticos (Udemy, PMI, GitHub) ou não puderam ser abertos dali; os que deram erro 404 foram corrigidos.
 - Os requisitos das vagas reais são **estimados automaticamente** pelo texto do anúncio, e o site avisa isso na tela.
 - Em produção, defina `SEGREDO_SESSAO` e troque o SQLite por Postgres (`prisma/schema.prisma`).
 - Ainda não há recuperação de senha, limite de tentativas de login nem confirmação de e-mail.

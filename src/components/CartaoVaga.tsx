@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { VagaComRequisitos } from "@/lib/fonte-de-vagas";
 import { formatarPublicacao, formatarSalario } from "@/lib/formatar";
-import { ROTULO_MODALIDADE, ROTULO_TIPO, rotuloDaOrigem, rotuloDoLocal } from "@/lib/rotulos";
+import { ROTULO_CONTRATO, ROTULO_MODALIDADE, ROTULO_TIPO, rotuloDaOrigem, rotuloDoLocal } from "@/lib/rotulos";
 import { BotaoSalvar } from "./BotaoSalvar";
 import { SeloCompatibilidade } from "./SeloCompatibilidade";
 
@@ -44,7 +44,14 @@ export function CartaoVaga({ vaga, percentual, salva, logado }: Props) {
               💰 {salario}
             </span>
           )}
-          <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">{ROTULO_TIPO[vaga.tipo] ?? vaga.tipo}</span>
+          <span className={`rounded px-2 py-1 ${vaga.tipo === "indefinido" ? "bg-slate-50 text-slate-500" : "bg-indigo-50 text-indigo-700"}`}>
+            {ROTULO_TIPO[vaga.tipo] ?? vaga.tipo}
+          </span>
+          {vaga.contrato && vaga.contrato !== "estagio" && (
+            <span className="rounded bg-violet-50 px-2 py-1 font-medium text-violet-800" title="Tipo de contratação informado no anúncio">
+              {ROTULO_CONTRATO[vaga.contrato] ?? vaga.contrato}
+            </span>
+          )}
           <span className="rounded bg-slate-100 px-2 py-1 text-slate-700">{ROTULO_MODALIDADE[vaga.modalidade] ?? vaga.modalidade}</span>
           <span className="rounded bg-slate-100 px-2 py-1 text-slate-700">{vaga.area}</span>
           <span className="rounded bg-amber-50 px-2 py-1 text-amber-800">{rotuloDaOrigem(vaga.origem)}</span>

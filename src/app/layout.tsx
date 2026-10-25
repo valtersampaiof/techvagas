@@ -3,9 +3,9 @@ import "./globals.css";
 import { Cabecalho } from "@/components/Cabecalho";
 
 export const metadata: Metadata = {
-  title: { default: "TechVagas — vagas e cursos para estudantes de TI", template: "%s · TechVagas" },
+  title: { default: "TechVagas — vagas de TI e cursos para chegar até elas", template: "%s · TechVagas" },
   description:
-    "Encontre estágios, trainees e vagas júnior em tecnologia e veja quais cursos gratuitos e pagos fecham a distância entre você e a vaga.",
+    "Encontre vagas de tecnologia, do estágio ao sênior, em CLT e PJ, e veja quais cursos gratuitos e pagos fecham a distância entre você e a vaga.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

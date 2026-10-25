@@ -5,7 +5,7 @@ import { configuracaoDeEmail, enderecoDoSite } from "@/lib/email";
 import type { VagaComRequisitos } from "@/lib/fonte-de-vagas";
 
 const filtros = (extra: Partial<FiltrosDoAlerta> = {}): FiltrosDoAlerta => ({
-  uf: "", cidade: "", incluirRemotas: true, tipo: "", area: "", salarioMinimo: null, ...extra,
+  uf: "", cidade: "", incluirRemotas: true, tipo: "", contrato: "", area: "", salarioMinimo: null, ...extra,
 });
 
 describe("alertas: nome, resumo e endereço da lista", () => {
@@ -14,12 +14,15 @@ describe("alertas: nome, resumo e endereço da lista", () => {
     expect(nomeDoAlerta(filtros({ uf: "PE", tipo: "estagio" }))).toBe("Estágios em Pernambuco");
     expect(nomeDoAlerta(filtros({ tipo: "junior", area: "Dados", salarioMinimo: 2000 }))).toBe("Vagas júnior de Dados a partir de R$ 2.000 por mês");
     expect(nomeDoAlerta(filtros({ tipo: "trainee" }))).toBe("Trainees");
+    expect(nomeDoAlerta(filtros({ tipo: "senior", contrato: "pj", area: "Dados" }))).toBe("Vagas sênior PJ de Dados");
+    expect(nomeDoAlerta(filtros({ tipo: "pleno", uf: "SP" }))).toBe("Vagas pleno em São Paulo");
+    expect(nomeDoAlerta(filtros({ contrato: "clt", uf: "PE" }))).toBe("Vagas CLT em Pernambuco");
     expect(nomeDoAlerta(filtros({ area: "Segurança" }))).toBe("Vagas de Segurança");
   });
 
   it("resume os filtros", () => {
     expect(resumoDosFiltros(filtros({ uf: "PE", cidade: "Recife", tipo: "estagio", incluirRemotas: false }))).toBe(
-      "estado: Pernambuco · cidade: Recife · tipo: Estágio · sem vagas remotas",
+      "estado: Pernambuco · cidade: Recife · nível: Estágio · sem vagas remotas",
     );
     expect(resumoDosFiltros(filtros({ area: "Dados" }))).toBe("área: Dados");
   });
@@ -33,6 +36,7 @@ describe("alertas: nome, resumo e endereço da lista", () => {
     expect(parametrosDaLista(filtros({ salarioMinimo: 1234 }))).toBe("");
     // "sem remotas" só faz sentido com região
     expect(parametrosDaLista(filtros({ incluirRemotas: false, tipo: "junior" }))).toBe("tipo=junior");
+    expect(parametrosDaLista(filtros({ tipo: "senior", contrato: "pj" }))).toBe("tipo=senior&contrato=pj");
   });
 
   it("exige algum filtro e gera tokens longos e diferentes", () => {
@@ -75,7 +79,7 @@ describe("configuracaoDeEmail", () => {
 describe("montarEmailDoAlerta", () => {
   const vaga = (id: number, extra: Partial<VagaComRequisitos> & { compatibilidade?: number | null } = {}): VagaComRequisitos & { compatibilidade?: number | null } => ({
     id, titulo: `Estágio ${id}`, empresa: "Acme", cidade: "Recife, Pernambuco", cidadeNome: "Recife", uf: "PE", modalidade: "presencial",
-    tipo: "estagio", area: "Programação", descricao: "", link: "https://exemplo.com", ativa: true, primeiraVezEm: new Date(),
+    tipo: "estagio", contrato: "estagio", area: "Programação", descricao: "", link: "https://exemplo.com", ativa: true, primeiraVezEm: new Date(),
     origem: "gupy", publicadaEm: null, salarioMin: null, salarioMax: null, salarioOrigem: "", requisitos: [], ...extra,
   });
   const base = {

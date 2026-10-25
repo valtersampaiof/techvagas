@@ -8,11 +8,12 @@ import { SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { formatarPublicacao } from "@/lib/formatar";
 import { usuarioAtual } from "@/lib/sessao";
+import { ehFiltroDeContrato, ehTipoDeVaga } from "@/lib/tipos-de-vaga";
 import { FormularioDeAlerta } from "@/components/FormularioDeAlerta";
 
 export const metadata: Metadata = { title: "Alertas por e-mail" };
 
-type Parametros = { uf?: string; cidade?: string; tipo?: string; area?: string; salario?: string; somenteRegiao?: string };
+type Parametros = { uf?: string; cidade?: string; tipo?: string; contrato?: string; area?: string; salario?: string; somenteRegiao?: string };
 
 export default async function PaginaDeAlertas({ searchParams }: { searchParams: Promise<Parametros> }) {
   const usuario = await usuarioAtual();
@@ -40,7 +41,8 @@ export default async function PaginaDeAlertas({ searchParams }: { searchParams: 
   const inicial = {
     uf: p.uf?.toUpperCase() ?? "",
     cidade: p.cidade?.slice(0, 80) ?? "",
-    tipo: ["estagio", "trainee", "junior"].includes(p.tipo ?? "") ? p.tipo! : "",
+    tipo: ehTipoDeVaga(p.tipo) ? p.tipo : "",
+    contrato: ehFiltroDeContrato(p.contrato) ? p.contrato : "",
     area: areas.includes(p.area ?? "") ? p.area! : "",
     salarioMinimo: (SALARIOS_MINIMOS as readonly number[]).includes(Number(p.salario)) ? String(p.salario) : "",
     incluirRemotas: !p.somenteRegiao,

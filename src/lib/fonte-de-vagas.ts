@@ -2,10 +2,14 @@ import type { PrismaClient } from "@prisma/client";
 import { db } from "./db";
 import { normalizar } from "./extrair-habilidades";
 import type { Requisito } from "./compatibilidade";
+import { contratosDoFiltro } from "./tipos-de-vaga";
 
 export type FiltrosDeVagas = {
   busca?: string;
+  /** Nível: "estagio", "trainee", "junior", "pleno", "senior", "lideranca" ou "indefinido". */
   tipo?: string;
+  /** "clt" ou "pj". Vagas que aceitam os dois entram nas duas; as que não informam ficam de fora. */
+  contrato?: string;
   modalidade?: string;
   area?: string;
   /** Sigla do estado, ex.: "PE". */
@@ -33,6 +37,8 @@ export type VagaComRequisitos = {
   cidade: string;
   modalidade: string;
   tipo: string;
+  /** "clt", "pj", "clt_pj", "estagio" ou "" (o anúncio não diz). */
+  contrato: string;
   area: string;
   descricao: string;
   link: string;
@@ -67,9 +73,11 @@ export interface FonteDeVagas {
   porIds(ids: number[]): Promise<VagaComRequisitos[]>;
 }
 
-const incluirRequisitos = {
-  requisitos: { include: { habilidade: { select: { slug: true, nome: true } } } },
-} as const;
+// Os requisitos vêm só com o número da habilidade; o nome vem de um mapa em memória (são poucas dezenas de habilidades).
+// Buscar a habilidade dentro de cada requisito deixava a lista com milhares de vagas quase duas vezes mais lenta.
+const incluirRequisitos = { requisitos: true } as const;
+
+type HabilidadesPorId = Map<number, { slug: string; nome: string }>;
 
 type VagaDoBanco = {
   id: number;
@@ -80,6 +88,7 @@ type VagaDoBanco = {
   uf: string;
   modalidade: string;
   tipo: string;
+  contrato: string;
   area: string;
   descricao: string;
   link: string;
@@ -90,10 +99,10 @@ type VagaDoBanco = {
   salarioMin: number | null;
   salarioMax: number | null;
   salarioOrigem: string;
-  requisitos: { nivelMinimo: string; obrigatorio: boolean; habilidade: { slug: string; nome: string } }[];
+  requisitos: { habilidadeId: number; nivelMinimo: string; obrigatorio: boolean }[];
 };
 
-function converter(v: VagaDoBanco): VagaComRequisitos {
+function converter(v: VagaDoBanco, habilidades: HabilidadesPorId): VagaComRequisitos {
   return {
     id: v.id,
     titulo: v.titulo,
@@ -103,6 +112,7 @@ function converter(v: VagaDoBanco): VagaComRequisitos {
     uf: v.uf,
     modalidade: v.modalidade,
     tipo: v.tipo,
+    contrato: v.contrato,
     area: v.area,
     descricao: v.descricao,
     link: v.link,
@@ -113,16 +123,19 @@ function converter(v: VagaDoBanco): VagaComRequisitos {
     salarioMin: v.salarioMin,
     salarioMax: v.salarioMax,
     salarioOrigem: v.salarioOrigem,
-    requisitos: v.requisitos.map((r) => ({
-      slug: r.habilidade.slug,
-      nome: r.habilidade.nome,
-      nivelMinimo: r.nivelMinimo,
-      obrigatorio: r.obrigatorio,
-    })),
+    requisitos: v.requisitos.flatMap((r) => {
+      const h = habilidades.get(r.habilidadeId);
+      return h ? [{ slug: h.slug, nome: h.nome, nivelMinimo: r.nivelMinimo, obrigatorio: r.obrigatorio }] : [];
+    }),
   };
 }
 
 export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
+  async function habilidadesPorId(): Promise<HabilidadesPorId> {
+    const linhas = await banco.habilidade.findMany({ select: { id: true, slug: true, nome: true } });
+    return new Map(linhas.map((h) => [h.id, { slug: h.slug, nome: h.nome }]));
+  }
+
   /**
    * As vagas de exemplo só servem para demonstrar o site. Assim que existir ao
    * menos uma vaga real, elas deixam de aparecer nas listagens.
@@ -134,7 +147,7 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
   }
 
   return {
-    async listar({ busca, tipo, modalidade, area, uf, cidade, somenteRegiao, salarioMinimo, publicadaHaDias, descobertasDepoisDe, agora = new Date() }) {
+    async listar({ busca, tipo, contrato, modalidade, area, uf, cidade, somenteRegiao, salarioMinimo, publicadaHaDias, descobertasDepoisDe, agora = new Date() }) {
       const chaveDaCidade = cidade ? normalizar(cidade).trim() : "";
       const regiao = {
         ...(uf ? { uf } : {}),
@@ -142,11 +155,13 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
       };
       const temRegiao = Object.keys(regiao).length > 0;
 
+      const [habilidades, filtroDaOrigem] = await Promise.all([habilidadesPorId(), filtroDeOrigem()]);
       const vagas = await banco.vaga.findMany({
         where: {
           AND: [
-            await filtroDeOrigem(),
+            filtroDaOrigem,
             tipo ? { tipo } : {},
+            contrato ? { contrato: { in: contratosDoFiltro(contrato) } } : {},
             modalidade ? { modalidade } : {},
             area ? { area } : {},
             busca
@@ -165,12 +180,12 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
         include: incluirRequisitos,
         orderBy: [{ publicadaEm: { sort: "desc", nulls: "last" } }, { id: "asc" }],
       });
-      return vagas.map(converter);
+      return vagas.map((v) => converter(v, habilidades));
     },
 
     async obter(id) {
       const v = await banco.vaga.findUnique({ where: { id }, include: incluirRequisitos });
-      return v ? converter(v) : null;
+      return v ? converter(v, await habilidadesPorId()) : null;
     },
 
     async areas() {
@@ -186,7 +201,8 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
     async porIds(ids) {
       if (ids.length === 0) return [];
       const vagas = await banco.vaga.findMany({ where: { id: { in: ids } }, include: incluirRequisitos });
-      const porId = new Map(vagas.map((v) => [v.id, converter(v)]));
+      const habilidades = await habilidadesPorId();
+      const porId = new Map(vagas.map((v) => [v.id, converter(v, habilidades)]));
       return ids.flatMap((id) => (porId.has(id) ? [porId.get(id)!] : []));
     },
 

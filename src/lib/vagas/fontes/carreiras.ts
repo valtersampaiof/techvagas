@@ -3,7 +3,8 @@ import { interpretarLocal } from "../../localizacao";
 import { PREFIXO_CARREIRA } from "../../rotulos";
 import { pedirJson } from "../http";
 import { pareceDeTI } from "../normalizar";
-import { dataOuNull, htmlParaTexto, textoOuVazio, urlSegura } from "../texto";
+import { escritoEmEspanhol } from "../idioma";
+import { dataOuNull, ehBancoDeTalentos, htmlParaTexto, textoOuVazio, urlSegura } from "../texto";
 import type { FonteExterna, VagaExterna } from "../tipos";
 
 /**
@@ -21,6 +22,8 @@ export type Empresa = {
   nome: string;
   /** Empresa de tecnologia, onde toda vaga é da área (os setores dela não têm nomes úteis). */
   soTecnologia?: boolean;
+  /** Empresa estrangeira: "Remote" sem país não vale; só entra vaga que cita o Brasil ou um lugar brasileiro. */
+  exigeBrasil?: boolean;
 };
 
 /**
@@ -48,6 +51,27 @@ export const EMPRESAS: Empresa[] = [
   { plataforma: "lever", id: "bv", nome: "Banco BV" },
   { plataforma: "lever", id: "neon", nome: "Neon" },
   { plataforma: "ashby", id: "nubank", nome: "Nubank" },
+  // Empresas estrangeiras com vagas no Brasil (só as que citam o Brasil)
+  { plataforma: "greenhouse", id: "braze", nome: "Braze", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "brex", nome: "Brex", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "datadog", nome: "Datadog", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "airbnb", nome: "Airbnb", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "databricks", nome: "Databricks", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "gitlab", nome: "GitLab", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "figma", nome: "Figma", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "adyen", nome: "Adyen", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "turing", nome: "Turing", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "mongodb", nome: "MongoDB", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "coinbase", nome: "Coinbase", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "binance", nome: "Binance", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "elastic", nome: "Elastic", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "twilio", nome: "Twilio", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "stripe", nome: "Stripe", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "payoneer", nome: "Payoneer", exigeBrasil: true },
+  { plataforma: "greenhouse", id: "thoughtworks", nome: "Thoughtworks", exigeBrasil: true },
+  { plataforma: "lever", id: "dlocal", nome: "dLocal", exigeBrasil: true },
+  { plataforma: "ashby", id: "snowflake", nome: "Snowflake", exigeBrasil: true },
+  { plataforma: "ashby", id: "amplitude", nome: "Amplitude", exigeBrasil: true },
 ];
 
 const NOME_DA_PLATAFORMA: Record<Plataforma, string> = { greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby" };
@@ -86,6 +110,9 @@ const semModalidade = (local: string) =>
     .replace(/^\s*[,/-]\s*/, "")
     .replace(/\s+/g, " ")
     .trim();
+
+/** Vale o local? Empresa estrangeira só com menção ao Brasil; empresa brasileira também quando só diz "Remoto". */
+const localValido = (local: string, empresa: Empresa) => (empresa.exigeBrasil ? citaBrasil(local) : ehNoBrasil(local));
 
 /** O melhor texto de local: entre vários separados por ";", o que é brasileiro. */
 function melhorLocal(local: string): string {
@@ -138,7 +165,7 @@ export function converterGreenhouse(json: unknown, empresa: Empresa, agora: Date
     const link = urlSegura(v.absolute_url);
     const titulo = limparTitulo(htmlParaTexto(textoOuVazio(v.title)));
     const local = textoOuVazio(v.location?.name);
-    if (v.id === undefined || !link || !titulo || !ehNoBrasil(local)) return [];
+    if (v.id === undefined || !link || !titulo || !localValido(local, empresa)) return [];
     const prazo = dataOuNull(v.application_deadline);
     if (prazo && prazo.getTime() < agora.getTime()) return [];
     return [{
@@ -178,7 +205,7 @@ export function converterLever(json: unknown, empresa: Empresa): VagaExterna[] {
     const titulo = limparTitulo(textoOuVazio(v.text));
     const local = textoOuVazio(v.categories?.location);
     // O código do país ("BR") é mais confiável que o texto, que costuma vir só em inglês ("Brazil").
-    const noBrasil = v.country ? v.country.toUpperCase() === "BR" : ehNoBrasil(local);
+    const noBrasil = v.country ? v.country.toUpperCase() === "BR" : localValido(local, empresa);
     if (!v.id || !link || !titulo || !noBrasil) return [];
 
     const listas = (v.lists ?? []).map((l) => `${textoOuVazio(l.text)}\n${htmlParaTexto(textoOuVazio(l.content))}`).join("\n\n");
@@ -231,7 +258,7 @@ export function converterAshby(json: unknown, empresa: Empresa): VagaExterna[] {
     // Vale a vaga se algum dos locais é no Brasil. Sem lugar claro ("Remote"), o país do endereço decide.
     const locais = [textoOuVazio(v.location), ...(v.secondaryLocations ?? []).map((s) => textoOuVazio(s.location))].filter(Boolean);
     const pais = textoOuVazio(v.address?.postalAddress?.addressCountry);
-    const noBrasil = locais.some(citaBrasil) || citaBrasil(pais) || (pais === "" && locais.some(ehNoBrasil));
+    const noBrasil = locais.some(citaBrasil) || citaBrasil(pais) || (pais === "" && locais.some((l) => localValido(l, empresa)));
     if (!noBrasil) return [];
 
     const tipoDeContrato = textoOuVazio(v.employmentType);
@@ -271,7 +298,9 @@ export function fonteDaEmpresa(empresa: Empresa): FonteExterna {
       // Resposta fora do formato esperado é erro (e não "empresa sem vagas"), para não apagar vagas por engano.
       const formatoCerto = empresa.plataforma === "lever" ? Array.isArray(json) : Array.isArray((json as { jobs?: unknown } | null)?.jobs);
       if (!formatoCerto) throw new Error(`${empresa.nome}: resposta inesperada de ${NOME_DA_PLATAFORMA[empresa.plataforma]}`);
-      return converterDaEmpresa(json, empresa).filter((v) => ehDeTecnologia(v, empresa));
+      return converterDaEmpresa(json, empresa).filter(
+        (v) => ehDeTecnologia(v, empresa) && !escritoEmEspanhol(`${v.titulo} ${v.descricao.slice(0, 1500)}`) && !ehBancoDeTalentos(v.titulo),
+      );
     },
   };
 }

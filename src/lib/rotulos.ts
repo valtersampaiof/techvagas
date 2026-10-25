@@ -2,6 +2,17 @@ export const ROTULO_TIPO: Record<string, string> = {
   estagio: "Estágio",
   trainee: "Trainee",
   junior: "Júnior",
+  pleno: "Pleno",
+  senior: "Sênior",
+  lideranca: "Liderança",
+  indefinido: "Nível não informado",
+};
+
+export const ROTULO_CONTRATO: Record<string, string> = {
+  clt: "CLT",
+  pj: "PJ",
+  clt_pj: "CLT ou PJ",
+  estagio: "Estágio",
 };
 
 export const ROTULO_MODALIDADE: Record<string, string> = {

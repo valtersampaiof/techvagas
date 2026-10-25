@@ -10,7 +10,7 @@ async function main() {
 
   const descrever = (r: ResultadoDaFonte) =>
     r.situacao === "ok"
-      ? `${r.salvas} salvas (${r.recebidas} recebidas; ${r.descartadas - (r.repetidas ?? 0)} descartadas por não serem para iniciantes de TI; ${r.repetidas ?? 0} já vieram de outra fonte)`
+      ? `${r.salvas} salvas (${r.recebidas} recebidas; ${r.descartadas - (r.repetidas ?? 0)} descartadas por não serem de TI; ${r.repetidas ?? 0} já vieram de outra fonte)`
       : r.situacao === "pulada"
         ? `pulada: ${r.detalhe}`
         : `erro: ${r.detalhe}`;

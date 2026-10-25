@@ -12,6 +12,7 @@ export const REPOSITORIOS = [
   "qa-brasil/vagas",
   "datascience-br/vagas",
   "androiddevbr/vagas",
+  "react-brasil/vagas",
 ];
 
 type Issue = {
@@ -77,15 +78,17 @@ export const github: FonteExterna = {
     const cabecalhos: Record<string, string> = { Accept: "application/vnd.github+json" };
     if (process.env.GITHUB_TOKEN) cabecalhos.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
 
-    return (
-      await buscarPorTermos(REPOSITORIOS, async (repositorio) =>
-        converterIssues(
-          await pedirJson(`https://api.github.com/repos/${repositorio}/issues?state=open&per_page=100`, {
-            headers: cabecalhos,
-          }),
-          repositorio,
-        ),
-      )
-    );
+    // Duas páginas de 100 por repositório (as vagas mais recentes primeiro).
+    return buscarPorTermos(REPOSITORIOS, async (repositorio) => {
+      const vagas: VagaExterna[] = [];
+      for (const pagina of [1, 2]) {
+        const issues = await pedirJson(`https://api.github.com/repos/${repositorio}/issues?state=open&per_page=100&page=${pagina}`, {
+          headers: cabecalhos,
+        });
+        vagas.push(...converterIssues(issues, repositorio));
+        if (!Array.isArray(issues) || issues.length < 100) break;
+      }
+      return vagas;
+    });
   },
 };

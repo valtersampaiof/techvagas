@@ -130,3 +130,14 @@ describe("salarioDeCamposDaFonte (Adzuna: valores anuais)", () => {
     expect(salarioDeCamposDaFonte(2500, 3000, "mes")).toEqual({ min: 2500, max: 3000, origem: "fonte" });
   });
 });
+
+describe("salários de vagas pleno, sênior e de liderança", () => {
+  it("aceita faixas altas, até R$ 60.000 por mês", () => {
+    expect(extrairSalarioDoTexto("Salário: R$ 18.000,00 a R$ 22.000,00 + benefícios")).toEqual({ min: 18000, max: 22000, origem: "texto" });
+    expect(salarioDeCamposDaFonte(240000, 300000, "ano")).toEqual({ min: 20000, max: 25000, origem: "fonte" });
+  });
+  it("descarta o que passa disso (provavelmente não é salário mensal)", () => {
+    expect(extrairSalarioDoTexto("Salário: R$ 90.000,00")).toBeNull();
+    expect(salarioDeCamposDaFonte(1200000, 1200000, "ano")).toBeNull();
+  });
+});

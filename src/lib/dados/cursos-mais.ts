@@ -175,7 +175,7 @@ export const CURSOS_MAIS: CursoBase[] = [
     habilidades: [["typescript", "avancado"], ["javascript", "intermediario"], ["ingles", "iniciante"]] },
 
   // ================= React =================
-  { titulo: "Full Stack Open", instituicao: "Universidade de Helsinque", link: "https://fullstackopen.com/pt/",
+  { titulo: "Full Stack Open", instituicao: "Universidade de Helsinque", link: "https://fullstackopen.com/",
     gratuito: true, preco: "Gratuito", cargaHoraria: 200, nivel: "intermediario", certificado: true,
     descricao: "Um dos melhores cursos abertos de desenvolvimento web moderno: React, Node, TypeScript e testes. Tem versão em português.",
     habilidades: [["react", "avancado"], ["node", "intermediario"], ["typescript", "intermediario"], ["javascript", "avancado"], ["api-rest", "intermediario"], ["testes", "intermediario"], ["git", "iniciante"]] },
@@ -283,7 +283,7 @@ export const CURSOS_MAIS: CursoBase[] = [
     gratuito: true, preco: "Gratuito", cargaHoraria: 4, nivel: "intermediario", certificado: true,
     descricao: "Dados faltantes, pipelines e validação cruzada, com certificado gratuito. Em inglês.",
     habilidades: [["ia-ml", "intermediario"], ["python", "intermediario"], ["ingles", "iniciante"]] },
-  { titulo: "Tutoriais do scikit-learn", instituicao: "scikit-learn", link: "https://scikit-learn.org/stable/tutorial/index.html",
+  { titulo: "Tutoriais do scikit-learn", instituicao: "scikit-learn", link: "https://scikit-learn.org/stable/user_guide.html",
     gratuito: true, preco: "Gratuito", cargaHoraria: 15, nivel: "intermediario", certificado: false,
     descricao: "Tutoriais oficiais da biblioteca mais usada de machine learning em Python. Em inglês, sem certificado.",
     habilidades: [["ia-ml", "intermediario"], ["python", "intermediario"], ["ingles", "intermediario"]] },

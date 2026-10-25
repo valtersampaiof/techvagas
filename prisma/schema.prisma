@@ -56,7 +56,9 @@ model Vaga {
   uf           String @default("")
   cidadeChave  String @default("")
   modalidade  String // "presencial" | "hibrido" | "remoto"
-  tipo        String // "estagio" | "trainee" | "junior"
+  tipo        String // "estagio" | "trainee" | "junior" | "pleno" | "senior" | "lideranca" | "indefinido"
+  // Como a pessoa é contratada: "clt", "pj", "clt_pj" (aceita os dois), "estagio" ou "" (o anúncio não diz).
+  contrato    String @default("")
   area        String
   descricao   String
   link        String @default("")
@@ -143,6 +145,8 @@ model Alerta {
   cidadeChave    String    @default("")
   incluirRemotas Boolean   @default(true)
   tipo           String    @default("")
+  // "clt" ou "pj" (vagas que aceitam os dois entram nos dois); vazio = qualquer.
+  contrato       String    @default("")
   area           String    @default("")
   salarioMinimo  Int?
   ativo          Boolean   @default(true)

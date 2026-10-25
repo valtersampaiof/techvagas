@@ -26,6 +26,11 @@ export function chaveDeVaga(titulo: string, empresa: string): string {
 export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] = FONTES): Promise<ResultadoDaFonte[]> {
   const ids = new Map((await db.habilidade.findMany({ select: { id: true, slug: true } })).map((h) => [h.slug, h.id]));
   if (ids.size === 0) throw new Error("O catálogo de habilidades está vazio. Rode `npm run db:preparar` antes.");
+  // O código ganhou habilidades que o banco ainda não tem (depois de uma atualização do site): sem elas, requisitos se perderiam.
+  const faltando = HABILIDADES.filter((h) => !ids.has(h.slug));
+  if (faltando.length > 0) {
+    throw new Error(`O banco não tem ${faltando.length} habilidade(s) do catálogo (${faltando.slice(0, 3).map((h) => h.slug).join(", ")}...). Rode \`npm run db:preparar\` antes.`);
+  }
 
   const resultados: ResultadoDaFonte[] = [];
   const origensAnteriores: string[] = [];
@@ -66,6 +71,7 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
           ...dadosDeLocalizacao(v.cidade),
           modalidade: v.modalidade,
           tipo: v.tipo,
+          contrato: v.contrato,
           area: v.area,
           descricao: v.descricao,
           link: v.link,

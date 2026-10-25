@@ -7,7 +7,7 @@ import type { FonteExterna, VagaExterna } from "../tipos";
  * Não exige chave. Pelos termos de uso, evite chamar mais que algumas vezes por dia e mantenha o link
  * de volta para a vaga original (já mantemos).
  */
-const CATEGORIAS = ["software-dev", "data", "devops", "qa"];
+const CATEGORIAS = ["software-dev", "data", "devops", "qa", "product"];
 
 /** Só interessa o que um brasileiro pode ocupar. */
 const LOCAL_ACEITO = /(worldwide|anywhere|brazil|brasil|latam|latin america|americas|south america)/i;

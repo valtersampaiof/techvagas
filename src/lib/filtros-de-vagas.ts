@@ -6,4 +6,4 @@ export const PUBLICACOES: Record<string, string> = {
   "30": "Últimos 30 dias",
 };
 
-export const SALARIOS_MINIMOS = [800, 1000, 1500, 2000, 3000, 4000, 6000] as const;
+export const SALARIOS_MINIMOS = [800, 1000, 1500, 2000, 3000, 4000, 6000, 8000, 10000, 15000, 20000] as const;

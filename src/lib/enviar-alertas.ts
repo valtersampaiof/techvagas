@@ -54,6 +54,7 @@ export async function enviarAlertas(opcoes: Opcoes): Promise<ResultadoDoAlerta[]
         cidade: alerta.cidade || undefined,
         somenteRegiao: !alerta.incluirRemotas,
         tipo: alerta.tipo || undefined,
+        contrato: alerta.contrato || undefined,
         area: alerta.area || undefined,
         salarioMinimo: alerta.salarioMinimo ?? undefined,
         descobertasDepoisDe: alerta.ultimoEnvioEm ?? alerta.criadoEm,

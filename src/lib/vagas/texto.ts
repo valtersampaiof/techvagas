@@ -78,3 +78,10 @@ export function dataOuNull(valor: unknown): Date | null {
   const d = new Date(valor);
   return Number.isNaN(d.getTime()) ? null : d;
 }
+
+/** Cadastro permanente de currículos, não uma vaga aberta de verdade. */
+const BANCO_DE_TALENTOS = /\b(banco de talentos|cadastro (de )?reserva|banco de curr[ií]culos?|talent pool|talent community)\b/i;
+
+export function ehBancoDeTalentos(titulo: string): boolean {
+  return BANCO_DE_TALENTOS.test(titulo);
+}

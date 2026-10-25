@@ -18,6 +18,7 @@ import { rotuloDaOrigem } from "@/lib/rotulos";
 const stone: Empresa = { plataforma: "greenhouse", id: "stone", nome: "Stone" };
 const ciandt: Empresa = { plataforma: "lever", id: "ciandt", nome: "CI&T", soTecnologia: true };
 const nubank: Empresa = { plataforma: "ashby", id: "nubank", nome: "Nubank" };
+const datadog: Empresa = { plataforma: "greenhouse", id: "datadog", nome: "Datadog", exigeBrasil: true };
 
 describe("ehNoBrasil", () => {
   it("aceita o que cita o Brasil ou um lugar brasileiro", () => {
@@ -109,6 +110,14 @@ describe("converterGreenhouse", () => {
     expect(v).toMatchObject({ cidade: "São Paulo", modalidade: "hibrido" });
     const [remoto] = converterGreenhouse({ jobs: [{ id: 2, title: "Dev Júnior", absolute_url: "https://x.com/2", location: { name: "Remoto" } }] }, stone);
     expect(remoto).toMatchObject({ cidade: "", modalidade: "remoto" });
+  });
+
+  it("empresa estrangeira só vale com menção ao Brasil: 'Remote' sem país fica de fora", () => {
+    const vaga = (id: number, local: string) => ({ id, title: "Software Engineer", absolute_url: `https://x.com/${id}`, location: { name: local } });
+    const jobs = [vaga(1, "Remote"), vaga(2, "Remote - Brazil"), vaga(3, "São Paulo, Brazil"), vaga(4, "New York, NY"), vaga(5, "")];
+    expect(converterGreenhouse({ jobs }, datadog).map((v) => v.idExterno)).toEqual(["2", "3"]);
+    // empresa brasileira: "Remote" e vazio valem
+    expect(converterGreenhouse({ jobs }, stone).map((v) => v.idExterno)).toEqual(["1", "2", "3", "5"]);
   });
 
   it("não quebra com resposta inesperada", () => {

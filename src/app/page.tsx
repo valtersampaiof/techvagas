@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 const passos = [
   { n: "1", titulo: "Mostre o que você sabe", texto: "Envie seu currículo em PDF ou marque suas habilidades. Você revisa tudo antes de salvar." },
-  { n: "2", titulo: "Veja vagas feitas para começar", texto: "Estágio, trainee e júnior em TI, com a compatibilidade de cada vaga com o seu perfil." },
+  { n: "2", titulo: "Veja vagas do seu nível", texto: "Do estágio à liderança, em CLT e PJ, com a compatibilidade de cada vaga com o seu perfil." },
   { n: "3", titulo: "Descubra o que estudar", texto: "Faltou algo, como segurança da informação? Mostramos cursos gratuitos e pagos, com certificado, para chegar lá." },
 ];
 
@@ -22,10 +22,10 @@ export default async function Inicio() {
     <div className="space-y-14">
       <section className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 px-6 py-14 text-white sm:px-12">
         <h1 className="max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
-          Sua primeira vaga em TI começa com saber o que falta.
+          Toda vaga de TI mostra o que falta para você chegar lá.
         </h1>
         <p className="mt-4 max-w-xl text-indigo-100">
-          Vagas para estudantes e recém-formados no Brasil, com a lista exata de habilidades que você ainda precisa e os
+          Vagas de estágio a sênior, CLT e PJ, em todo o Brasil, com a lista exata de habilidades que você ainda precisa e os
           cursos para conquistá-las.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
