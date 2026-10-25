@@ -122,6 +122,21 @@ describe("sincronizarVagas", () => {
     expect(await db.vaga.count({ where: { origem: "segunda" } })).toBe(1);
   });
 
+  it("grava o salário (inclusive o lido do texto) e o remove se o anúncio deixar de informar", async () => {
+    const comBolsa = (descricao: string, extra: Partial<VagaExterna> = {}) => ({ ...vaga("sal1", "Desenvolvedor Python Júnior", descricao), ...extra });
+    await sincronizarVagas(db, [fonte(() => [comBolsa("Python. Bolsa auxílio: R$ 1.500,00 no primeiro ano.R$ 1.900,00 no segundo ano.Vale")])]);
+    let v = await db.vaga.findFirstOrThrow({ where: { origem: "falsa", idExterno: "sal1" } });
+    expect(v).toMatchObject({ salarioMin: 1500, salarioMax: 1900, salarioOrigem: "texto" });
+
+    await sincronizarVagas(db, [fonte(() => [comBolsa("Python", { salario: { min: 2000.4, max: null, origem: "fonte" } })])]);
+    v = await db.vaga.findFirstOrThrow({ where: { origem: "falsa", idExterno: "sal1" } });
+    expect(v).toMatchObject({ salarioMin: 2000, salarioMax: null, salarioOrigem: "fonte" });
+
+    await sincronizarVagas(db, [fonte(() => [comBolsa("Python, bolsa a combinar")])]);
+    v = await db.vaga.findFirstOrThrow({ where: { origem: "falsa", idExterno: "sal1" } });
+    expect(v).toMatchObject({ salarioMin: null, salarioMax: null, salarioOrigem: "" });
+  });
+
   it("pula fonte indisponível e registra erro sem derrubar as outras", async () => {
     const resultados = await sincronizarVagas(db, [
       fonte(() => [], { rotulo: "Sem chave", indisponivel: () => "defina a chave" }),

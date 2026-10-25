@@ -106,3 +106,46 @@ describe("vagas de exemplo", () => {
     expect((await fonte.locais()).length).toBe(1);
   });
 });
+
+describe("filtros de salário e de data", () => {
+  const agora = new Date("2026-10-25T12:00:00Z");
+  const dias = (n: number) => new Date(agora.getTime() - n * 24 * 60 * 60 * 1000);
+
+  beforeAll(async () => {
+    await db.vaga.deleteMany();
+    await criar("Bolsa 1200", "Recife, PE", "presencial", { salarioMin: 1200, salarioMax: 1200, publicadaEm: dias(1) });
+    await criar("Faixa 1500-1900", "Recife, PE", "presencial", { salarioMin: 1500, salarioMax: 1900, publicadaEm: dias(5) });
+    await criar("A partir de 3000", "Recife, PE", "presencial", { salarioMin: 3000, salarioMax: null, publicadaEm: dias(20) });
+    await criar("Sem valor", "Recife, PE", "presencial", { publicadaEm: dias(40) });
+    await criar("Sem data", "Recife, PE", "presencial", { salarioMin: 2000, salarioMax: 2000, publicadaEm: null });
+  });
+
+  it("salário mínimo usa o teto da faixa e o piso do 'a partir de'; sem valor fica de fora", async () => {
+    expect(await titulos({ salarioMinimo: 1000, agora })).toEqual(["A partir de 3000", "Bolsa 1200", "Faixa 1500-1900", "Sem data"]);
+    expect(await titulos({ salarioMinimo: 1800, agora })).toEqual(["A partir de 3000", "Faixa 1500-1900", "Sem data"]);
+    expect(await titulos({ salarioMinimo: 2500, agora })).toEqual(["A partir de 3000"]);
+    expect(await titulos({ salarioMinimo: 5000, agora })).toEqual([]);
+  });
+
+  it("sem filtro de salário, vagas sem valor continuam aparecendo", async () => {
+    expect((await titulos({ agora })).includes("Sem valor")).toBe(true);
+  });
+
+  it("publicada nos últimos N dias; vaga sem data fica de fora", async () => {
+    expect(await titulos({ publicadaHaDias: 1, agora })).toEqual(["Bolsa 1200"]);
+    expect(await titulos({ publicadaHaDias: 7, agora })).toEqual(["Bolsa 1200", "Faixa 1500-1900"]);
+    expect(await titulos({ publicadaHaDias: 30, agora })).toEqual(["A partir de 3000", "Bolsa 1200", "Faixa 1500-1900"]);
+    expect(await titulos({ publicadaHaDias: 365, agora })).not.toContain("Sem data");
+  });
+
+  it("combina data, salário e região (E)", async () => {
+    expect(await titulos({ publicadaHaDias: 7, salarioMinimo: 1800, uf: "PE", agora })).toEqual(["Faixa 1500-1900"]);
+  });
+
+  it("devolve o salário nas vagas", async () => {
+    const v = (await fonte.listar({ busca: "Faixa", agora }))[0];
+    expect(v).toMatchObject({ salarioMin: 1500, salarioMax: 1900 });
+    const sem = (await fonte.listar({ busca: "Sem valor", agora }))[0];
+    expect(sem).toMatchObject({ salarioMin: null, salarioMax: null, salarioOrigem: "" });
+  });
+});

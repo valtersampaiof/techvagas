@@ -5,6 +5,7 @@ import { calcularCompatibilidade, melhoresGratuitos, recomendarCursos, type Lacu
 import { listarCursosCandidatos } from "@/lib/cursos";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
+import { formatarPublicacao, formatarSalario } from "@/lib/formatar";
 import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO, rotuloDoLocal } from "@/lib/rotulos";
 import { usuarioAtual } from "@/lib/sessao";
 import { CartaoCurso } from "@/components/CartaoCurso";
@@ -36,6 +37,8 @@ export default async function PaginaDaVaga({ params }: Props) {
   const temPerfil = habilidades.length > 0;
 
   const semRequisitos = vaga.requisitos.length === 0;
+  const salario = formatarSalario(vaga);
+  const publicacao = formatarPublicacao(vaga.publicadaEm);
   const compat = calcularCompatibilidade(vaga.requisitos, habilidades);
   const cursos = await listarCursosCandidatos();
   // Sem perfil, mostramos cursos para todos os requisitos da vaga.
@@ -75,6 +78,16 @@ export default async function PaginaDaVaga({ params }: Props) {
           <span className="rounded bg-slate-100 px-2 py-1">{ROTULO_MODALIDADE[vaga.modalidade] ?? vaga.modalidade}</span>
           <span className="rounded bg-slate-100 px-2 py-1">{vaga.area}</span>
         </div>
+        {salario && (
+          <p className="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+            <strong>💰 {salario}</strong>
+            <span className="block text-xs text-emerald-800">
+              {vaga.salarioOrigem === "texto"
+                ? "Valor identificado no texto do anúncio. Confira na vaga original (pode variar por semestre, carga horária ou cidade)."
+                : "Valor informado pela fonte do anúncio. Confira na vaga original."}
+            </span>
+          </p>
+        )}
         <p className="mt-4 whitespace-pre-line text-slate-700">{vaga.descricao}</p>
         {vaga.origem === "exemplo" ? (
           <p className="mt-3 text-xs text-amber-700">Vaga fictícia, criada apenas para demonstração.</p>
@@ -92,7 +105,7 @@ export default async function PaginaDaVaga({ params }: Props) {
             )}
             <p className="text-xs text-slate-500">
               Fonte: {ROTULO_ORIGEM[vaga.origem] ?? vaga.origem}
-              {vaga.publicadaEm && ` · publicada em ${vaga.publicadaEm.toLocaleDateString("pt-BR")}`}. Os requisitos foram
+              {publicacao && ` · publicada ${publicacao}`}. Os requisitos foram
               identificados automaticamente pelo texto do anúncio; confira os detalhes na vaga original.
             </p>
           </div>

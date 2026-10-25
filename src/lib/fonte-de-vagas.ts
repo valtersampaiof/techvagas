@@ -14,6 +14,12 @@ export type FiltrosDeVagas = {
   cidade?: string;
   /** Por padrão, ao filtrar por estado/cidade as vagas remotas continuam aparecendo. */
   somenteRegiao?: boolean;
+  /** Salário ou bolsa mensal mínimo. Vagas sem valor informado ficam de fora. */
+  salarioMinimo?: number;
+  /** Só vagas publicadas nos últimos N dias. Vagas sem data ficam de fora. */
+  publicadaHaDias?: number;
+  /** Relógio usado em "últimos N dias" (existe para os testes). */
+  agora?: Date;
 };
 
 export type LocalComVagas = { uf: string; cidade: string; vagas: number };
@@ -33,6 +39,11 @@ export type VagaComRequisitos = {
   uf: string;
   origem: string;
   publicadaEm: Date | null;
+  /** Salário ou bolsa em reais por mês, quando o anúncio informa. */
+  salarioMin: number | null;
+  salarioMax: number | null;
+  /** "fonte" (campo próprio), "texto" (lido do anúncio) ou "". */
+  salarioOrigem: string;
   requisitos: Requisito[];
 };
 
@@ -66,6 +77,9 @@ type VagaDoBanco = {
   link: string;
   origem: string;
   publicadaEm: Date | null;
+  salarioMin: number | null;
+  salarioMax: number | null;
+  salarioOrigem: string;
   requisitos: { nivelMinimo: string; obrigatorio: boolean; habilidade: { slug: string; nome: string } }[];
 };
 
@@ -84,6 +98,9 @@ function converter(v: VagaDoBanco): VagaComRequisitos {
     link: v.link,
     origem: v.origem,
     publicadaEm: v.publicadaEm,
+    salarioMin: v.salarioMin,
+    salarioMax: v.salarioMax,
+    salarioOrigem: v.salarioOrigem,
     requisitos: v.requisitos.map((r) => ({
       slug: r.habilidade.slug,
       nome: r.habilidade.nome,
@@ -104,7 +121,7 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
   }
 
   return {
-    async listar({ busca, tipo, modalidade, area, uf, cidade, somenteRegiao }) {
+    async listar({ busca, tipo, modalidade, area, uf, cidade, somenteRegiao, salarioMinimo, publicadaHaDias, agora = new Date() }) {
       const chaveDaCidade = cidade ? normalizar(cidade).trim() : "";
       const regiao = {
         ...(uf ? { uf } : {}),
@@ -124,6 +141,11 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
               : {},
             // Com estado/cidade, as vagas remotas também servem (a menos que a pessoa peça só a região).
             temRegiao ? (somenteRegiao ? regiao : { OR: [regiao, { modalidade: "remoto" }] }) : {},
+            // Vale o teto da faixa ("R$ 1.500 a R$ 1.900" serve para quem quer 1.800+); "a partir de" vale o piso.
+            salarioMinimo
+              ? { OR: [{ salarioMax: { gte: salarioMinimo } }, { AND: [{ salarioMax: null }, { salarioMin: { gte: salarioMinimo } }] }] }
+              : {},
+            publicadaHaDias ? { publicadaEm: { gte: new Date(agora.getTime() - publicadaHaDias * 24 * 60 * 60 * 1000) } } : {},
           ],
         },
         include: incluirRequisitos,

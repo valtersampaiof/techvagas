@@ -1,3 +1,4 @@
+import { salarioDeCamposDaFonte } from "../../salario";
 import { pedirJson, buscarPorTermos } from "../http";
 import { dataOuNull, htmlParaTexto, textoOuVazio, urlSegura } from "../texto";
 import type { FonteExterna, VagaExterna } from "../tipos";
@@ -21,6 +22,10 @@ type ResultadoAdzuna = {
   description?: string;
   redirect_url?: string;
   created?: string;
+  salary_min?: number | null;
+  salary_max?: number | null;
+  /** "1" quando o valor é uma estimativa da Adzuna, e não o que o anúncio informa. */
+  salary_is_predicted?: string | number | null;
   company?: { display_name?: string };
   location?: { display_name?: string };
 };
@@ -42,6 +47,8 @@ export function converterAdzuna(json: unknown): VagaExterna[] {
       descricao: htmlParaTexto(textoOuVazio(r.description)),
       link,
       publicadaEm: dataOuNull(r.created),
+      // Os valores da Adzuna são anuais. Estimativas dela (salary_is_predicted = 1) não são usadas.
+      salario: String(r.salary_is_predicted) === "1" ? null : salarioDeCamposDaFonte(r.salary_min, r.salary_max, "ano"),
     }];
   });
 }

@@ -226,6 +226,31 @@ describe("normalizarVaga", () => {
     expect(n.requisitos.map((r) => r.slug)).toEqual(expect.arrayContaining(["csharp", "sql"]));
   });
 
+  it("lê a bolsa do texto quando a fonte não informa o valor", () => {
+    const n = normalizarVaga(vaga({ titulo: "Estágio em TI", descricao: "Python e SQL. Bolsa auxílio: R$ 1.500,00 no primeiro ano.R$ 1.900,00 no segundo ano.Vale-transporte" }), HABILIDADES)!;
+    expect(n.salario).toEqual({ min: 1500, max: 1900, origem: "texto" });
+  });
+
+  it("o valor que a fonte informa tem prioridade sobre o texto", () => {
+    const n = normalizarVaga(
+      vaga({ titulo: "Estágio em TI", descricao: "Python. Bolsa auxílio: R$ 999,00", salario: { min: 1500, max: 1500, origem: "fonte" } }),
+      HABILIDADES,
+    )!;
+    expect(n.salario).toEqual({ min: 1500, max: 1500, origem: "fonte" });
+  });
+
+  it("encontra a bolsa no FIM de uma descrição longa, antes de ela ser cortada", () => {
+    const longa = "Python e SQL. " + "texto de apresentação da empresa. ".repeat(80) + "Informações adicionaisBolsa auxílio: R$ 1.800,00Vale refeição";
+    expect(longa.length).toBeGreaterThan(1500);
+    const n = normalizarVaga(vaga({ titulo: "Estágio em TI", descricao: longa }), HABILIDADES)!;
+    expect(n.descricao.length).toBeLessThanOrEqual(1501);
+    expect(n.salario).toEqual({ min: 1800, max: 1800, origem: "texto" });
+  });
+
+  it("sem valor no anúncio, o salário é nulo", () => {
+    expect(normalizarVaga(vaga({ titulo: "Estágio em TI", descricao: "Python e SQL. Bolsa a combinar." }), HABILIDADES)!.salario).toBeNull();
+  });
+
   it("usa 'Brasil' quando a fonte não traz cidade e limita o tamanho da descrição", () => {
     const n = normalizarVaga(vaga({ cidade: "", descricao: "Python. " + "texto ".repeat(1000) }), HABILIDADES)!;
     expect(n.cidade).toBe("Brasil");

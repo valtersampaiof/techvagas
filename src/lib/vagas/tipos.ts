@@ -1,3 +1,5 @@
+import type { Salario } from "../salario";
+
 /** Vaga como veio da fonte, já em texto simples, antes de ser classificada. */
 export type VagaExterna = {
   origem: string;
@@ -13,6 +15,8 @@ export type VagaExterna = {
   modalidade?: "remoto" | "hibrido" | "presencial";
   /** Etiquetas da própria fonte (ex.: "Júnior", "Remoto"). */
   rotulos?: string[];
+  /** Salário informado pela própria fonte em campo próprio, já convertido para mensal. */
+  salario?: Salario | null;
 };
 
 export interface FonteExterna {

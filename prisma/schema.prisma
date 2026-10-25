@@ -63,6 +63,11 @@ model Vaga {
   origem        String   @default("exemplo")
   idExterno     String?  // identificador da vaga na fonte; vazio nas vagas de exemplo
   publicadaEm   DateTime?
+  // Salário ou bolsa em reais por mês, quando o anúncio informa. Origem: "fonte" (campo próprio da fonte),
+  // "texto" (identificado no texto do anúncio) ou "" (sem valor).
+  salarioMin    Int?
+  salarioMax    Int?
+  salarioOrigem String @default("")
   atualizadaEm  DateTime @default(now())
 
   requisitos  RequisitoDaVaga[]

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { calcularCompatibilidade } from "@/lib/compatibilidade";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
+import { formatarReais } from "@/lib/formatar";
 import { ehDaRegiao, interpretarLocal, nomeDoEstado } from "@/lib/localizacao";
 import { numeroDaPagina, paginar } from "@/lib/paginacao";
 import { ROTULO_MODALIDADE, ROTULO_TIPO } from "@/lib/rotulos";
@@ -19,9 +20,15 @@ type Parametros = {
   uf?: string;
   cidade?: string;
   somenteRegiao?: string;
+  publicada?: string;
+  salario?: string;
+  ordem?: string;
   compativeis?: string;
   pagina?: string;
 };
+
+const PUBLICACOES: Record<string, string> = { "1": "Últimas 24 horas", "3": "Últimos 3 dias", "7": "Últimos 7 dias", "30": "Últimos 30 dias" };
+const SALARIOS_MINIMOS = [800, 1000, 1500, 2000, 3000, 4000, 6000];
 
 const seletor = "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm";
 const COMPATIBILIDADE_MINIMA = 60;
@@ -35,6 +42,10 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
   const cidade = filtros.cidade?.trim() || undefined;
   const somenteRegiao = !!filtros.somenteRegiao;
   const temRegiao = !!(uf || cidade);
+  // Só valores conhecidos: qualquer outra coisa na URL é ignorada em vez de quebrar a página.
+  const publicadaHaDias = filtros.publicada && PUBLICACOES[filtros.publicada] ? Number(filtros.publicada) : undefined;
+  const salarioMinimo = SALARIOS_MINIMOS.includes(Number(filtros.salario)) ? Number(filtros.salario) : undefined;
+  const ordem = filtros.ordem === "recentes" || filtros.ordem === "salario" ? filtros.ordem : "padrao";
 
   const vagas = await fonteDeVagas.listar({
     busca: filtros.busca?.trim() || undefined,
@@ -44,6 +55,8 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
     uf,
     cidade,
     somenteRegiao,
+    publicadaHaDias,
+    salarioMinimo,
   });
 
   const habilidades = usuario?.habilidades.map((h) => ({ slug: h.habilidade.slug, nivel: h.nivel })) ?? [];
@@ -56,21 +69,25 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
   }));
   if (temPerfil && filtros.compativeis) itens = itens.filter((i) => (i.percentual ?? 0) >= COMPATIBILIDADE_MINIMA);
 
-  // Com região escolhida, as vagas de lá vêm primeiro e as remotas de outros lugares depois. O sort do JavaScript
-  // é estável: dentro de cada grupo, vale a ordem anterior (por data, ou por compatibilidade abaixo).
+  // Com região escolhida, as vagas de lá vêm primeiro e as remotas de outros lugares depois.
   const daRegiaoPrimeiro = temRegiao && !somenteRegiao;
   const grupo = (v: (typeof itens)[number]["vaga"]) => (daRegiaoPrimeiro && !ehDaRegiao(v, uf, cidade) ? 1 : 0);
-  if (temPerfil) {
-    // Em empate, vem primeiro a vaga com mais requisitos identificados: a compatibilidade é mais confiável.
-    itens.sort(
-      (a, b) =>
-        grupo(a.vaga) - grupo(b.vaga) ||
-        (b.percentual ?? -1) - (a.percentual ?? -1) ||
-        b.vaga.requisitos.length - a.vaga.requisitos.length,
-    );
-  } else if (daRegiaoPrimeiro) {
-    itens.sort((a, b) => grupo(a.vaga) - grupo(b.vaga));
-  }
+  const dataDe = (v: (typeof itens)[number]["vaga"]) => v.publicadaEm?.getTime() ?? 0;
+  const valorDe = (v: (typeof itens)[number]["vaga"]) => v.salarioMax ?? v.salarioMin ?? -1;
+  itens.sort(
+    (a, b) =>
+      grupo(a.vaga) - grupo(b.vaga) ||
+      (ordem === "recentes"
+        ? dataDe(b.vaga) - dataDe(a.vaga)
+        : ordem === "salario"
+          ? valorDe(b.vaga) - valorDe(a.vaga) || dataDe(b.vaga) - dataDe(a.vaga)
+          : // Padrão: com perfil, as mais compatíveis (e, em empate, as com mais requisitos identificados, que são mais
+            // confiáveis); sem perfil, mantém a ordem do banco (mais recentes primeiro).
+            temPerfil
+            ? (b.percentual ?? -1) - (a.percentual ?? -1) || b.vaga.requisitos.length - a.vaga.requisitos.length
+            : 0),
+  );
+  const comSalario = itens.filter((i) => i.vaga.salarioMin !== null).length;
 
   const pagina = paginar(itens, numeroDaPagina(filtros.pagina));
 
@@ -106,6 +123,9 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
     uf: filtros.uf,
     cidade: filtros.cidade,
     somenteRegiao: filtros.somenteRegiao,
+    publicada: filtros.publicada,
+    salario: filtros.salario,
+    ordem: filtros.ordem,
     compativeis: filtros.compativeis,
   };
 
@@ -174,6 +194,26 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
           )}
         </div>
 
+        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3">
+          <span className="text-sm font-medium text-slate-700">Quando e quanto:</span>
+          <select name="publicada" defaultValue={publicadaHaDias ? String(publicadaHaDias) : ""} className={seletor} aria-label="Publicada">
+            <option value="">Publicada em qualquer data</option>
+            {Object.entries(PUBLICACOES).map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}
+          </select>
+          <select name="salario" defaultValue={salarioMinimo ? String(salarioMinimo) : ""} className={seletor} aria-label="Salário ou bolsa mínimo">
+            <option value="">Qualquer salário ou bolsa</option>
+            {SALARIOS_MINIMOS.map((v) => <option key={v} value={v}>A partir de {formatarReais(v)} por mês</option>)}
+          </select>
+          <select name="ordem" defaultValue={ordem} className={seletor} aria-label="Ordenar por">
+            <option value="padrao">{temPerfil ? "Ordenar: mais compatíveis" : "Ordenar: mais recentes"}</option>
+            {temPerfil && <option value="recentes">Ordenar: mais recentes</option>}
+            <option value="salario">Ordenar: maior salário</option>
+          </select>
+          <p className="basis-full text-xs text-slate-500">
+            Só uma parte dos anúncios informa o valor. Ao escolher um mínimo, as vagas sem valor informado ficam de fora.
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-center gap-3">
           {temPerfil && (
             <label className="flex items-center gap-2 text-sm">
@@ -195,6 +235,8 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
           </>
         )}
         {pagina.totalPaginas > 1 && ` · página ${pagina.atual} de ${pagina.totalPaginas}`}
+        {comSalario > 0 && ` · ${comSalario} informam salário ou bolsa`}
+        {publicadaHaDias && ` · ${PUBLICACOES[String(publicadaHaDias)].toLowerCase()}`}
       </p>
 
       <div className="mt-3 grid gap-4 md:grid-cols-2">

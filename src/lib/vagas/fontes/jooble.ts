@@ -1,3 +1,4 @@
+import { lerCampoDeSalario } from "../../salario";
 import { pedirJson, buscarPorTermos } from "../http";
 import { dataOuNull, htmlParaTexto, textoOuVazio, urlSegura } from "../texto";
 import type { FonteExterna, VagaExterna } from "../tipos";
@@ -23,6 +24,7 @@ type VagaJooble = {
   link?: string;
   company?: string;
   updated?: string;
+  salary?: string;
   type?: string;
 };
 
@@ -45,6 +47,7 @@ export function converterJooble(json: unknown): VagaExterna[] {
       descricao: htmlParaTexto(textoOuVazio(j.snippet)),
       link,
       publicadaEm: dataOuNull(j.updated),
+      salario: lerCampoDeSalario(j.salary),
     }];
   });
 }

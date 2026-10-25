@@ -36,6 +36,26 @@ describe("converterAdzuna", () => {
     expect(r[0].publicadaEm).toEqual(new Date("2026-10-20T10:00:00Z"));
   });
 
+  it("converte o salário anual da Adzuna para mensal, ignorando estimativas e valores implausíveis", () => {
+    const base = { redirect_url: "https://www.adzuna.com.br/land/ad/1", title: "Estágio em TI" };
+    const r = converterAdzuna({
+      results: [
+        { ...base, id: 1, salary_min: 18000, salary_max: 18000, salary_is_predicted: "0" },
+        { ...base, id: 2, salary_min: 37200, salary_max: 49200, salary_is_predicted: 0 },
+        { ...base, id: 3, salary_min: 60000, salary_max: 60000, salary_is_predicted: "1" }, // estimativa da Adzuna
+        { ...base, id: 4, salary_min: 168, salary_max: 168, salary_is_predicted: "0" }, // implausível
+        { ...base, id: 5 }, // sem salário
+      ],
+    });
+    expect(r.map((v) => v.salario)).toEqual([
+      { min: 1500, max: 1500, origem: "fonte" },
+      { min: 3100, max: 4100, origem: "fonte" },
+      null,
+      null,
+      null,
+    ]);
+  });
+
   it("não quebra com resposta inesperada", () => {
     expect(converterAdzuna(null)).toEqual([]);
     expect(converterAdzuna({ erro: "x" })).toEqual([]);
@@ -51,6 +71,19 @@ describe("converterJooble", () => {
     });
     expect(r).toHaveLength(1);
     expect(r[0]).toMatchObject({ origem: "jooble", idExterno: "https://jooble.org/desc/1", empresa: "Beta", cidade: "Curitiba" });
+  });
+
+  it("lê o campo de salário do Jooble", () => {
+    const base = { title: "Estágio", link: "https://jooble.org/desc/1" };
+    const r = converterJooble({
+      jobs: [
+        { ...base, id: 1, salary: "R$ 2.000 - R$ 3.000 por mês" },
+        { ...base, id: 2, salary: "R$ 20 por hora" },
+        { ...base, id: 3, salary: "" },
+        { ...base, id: 4 },
+      ],
+    });
+    expect(r.map((v) => v.salario)).toEqual([{ min: 2000, max: 3000, origem: "fonte" }, null, null, null]);
   });
 
   it("não quebra com resposta inesperada", () => {

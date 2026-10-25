@@ -25,7 +25,7 @@ Outros comandos: `npm test` (testes), `npm run lint`, `npm run build`.
 | Página | Função |
 | --- | --- |
 | `/` | Apresentação |
-| `/vagas` | Lista com filtros (tipo, modalidade, área, **estado e cidade**), % de compatibilidade (quando logado e com perfil) e paginação |
+| `/vagas` | Lista com filtros (tipo, modalidade, área, **estado e cidade**, **data de publicação**, **salário/bolsa mínimo**), ordenação (compatibilidade, mais recentes, maior salário), % de compatibilidade (quando logado e com perfil) e paginação |
 | `/vagas/[id]` | Requisitos (✔ tem / ✘ falta) e cursos para cada lacuna. **Passe o mouse (ou toque) no nome de uma habilidade** para ver até 3 cursos gratuitos dela num mini quadro, sem sair da página |
 | `/cursos` | Catálogo com busca por texto e filtros (habilidade, preço, nível em que começa, **até onde leva**, idioma, duração, certificado), ordenação e paginação |
 | `/perfil` | Envio do currículo em PDF, revisão e edição das habilidades |
@@ -97,6 +97,15 @@ Para incluir outra fonte, crie um arquivo em `src/lib/vagas/fontes/` que cumpra 
   cidade, sigla do estado e a cidade sem acentos; a busca por cidade ignora acentos e maiúsculas. Ao filtrar por um
   lugar, as vagas de lá vêm primeiro e as **remotas** continuam aparecendo depois (dá para esconder). Vagas "Brasil" ou
   sem local claro não entram no filtro de cidade/estado. Se o perfil tem cidade, aparece o botão "usar minha cidade".
+- **Salário e bolsa** (`src/lib/salario.ts`): só uma parte dos anúncios informa o valor (numa execução, 46 de 267, ou 17%).
+  A Adzuna traz o valor em campo próprio, **anual**, que dividimos por 12; estimativas dela (`salary_is_predicted`) não
+  são usadas. Para a Gupy, e quando a Adzuna não informa, o valor é lido do texto, mas só o que vem logo depois de
+  "bolsa", "salário" ou "remuneração" e antes de qualquer benefício (vale-refeição, plano de saúde...). Várias faixas
+  ("1º ano... 2º ano...", "20h... 30h...") viram um intervalo; "a partir de" deixa o teto em aberto. Valor por hora ou
+  fora de R$ 300 a R$ 30.000 por mês é descartado. A tela diz de onde veio o valor. Ao filtrar por um mínimo, vale o
+  teto da faixa, e as vagas sem valor informado ficam de fora.
+- **Data de publicação**: filtro de "últimas 24 horas" a "últimos 30 dias". Vaga sem data fica de fora quando o filtro
+  está ligado.
 - **Idioma dos cursos** (`src/lib/filtrar-cursos.ts`): é uma **estimativa** feita por sinais (endereço `/pt-br/`,
   menção a português, título em português, instituição brasileira). Confira no site do curso.
 - **Mini quadro de cursos** (`src/components/RequisitoComCursos.tsx`): abre ao passar o mouse, tocar ou focar com o

@@ -1,5 +1,6 @@
 import type { HabilidadeBase } from "../dados/habilidades";
 import { extrairHabilidades, normalizar } from "../extrair-habilidades";
+import { extrairSalarioDoTexto, type Salario } from "../salario";
 import { espacarFrases, truncar } from "./texto";
 import type { VagaExterna } from "./tipos";
 
@@ -10,6 +11,8 @@ export type VagaNormalizada = VagaExterna & {
   modalidade: "remoto" | "hibrido" | "presencial";
   area: string;
   requisitos: { slug: string; nivelMinimo: "iniciante"; obrigatorio: boolean }[];
+  /** Salário ou bolsa mensal: o que a fonte informou ou, na falta, o que está no texto do anúncio. */
+  salario: Salario | null;
 };
 
 const NIVEL_ACIMA = /\b(senior|sr|pleno|pl|especialista|lead|tech lead|staff|principal|gerente|coordenador|head)\b/;
@@ -139,5 +142,7 @@ export function normalizarVaga(v: VagaExterna, catalogo: HabilidadeBase[]): Vaga
     modalidade: detectarModalidade(v),
     area: escolherArea(requisitos.map((r) => r.slug), catalogo, v.titulo),
     requisitos,
+    // Lido do texto COMPLETO (antes de truncar), que é onde a bolsa costuma aparecer, perto do fim.
+    salario: v.salario ?? extrairSalarioDoTexto(v.descricao),
   };
 }

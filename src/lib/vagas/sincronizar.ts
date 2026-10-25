@@ -69,6 +69,9 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
           descricao: v.descricao,
           link: v.link,
           publicadaEm: v.publicadaEm,
+          salarioMin: v.salario ? Math.round(v.salario.min) : null,
+          salarioMax: v.salario?.max != null ? Math.round(v.salario.max) : null,
+          salarioOrigem: v.salario?.origem ?? "",
           atualizadaEm: new Date(),
           requisitos: {
             deleteMany: {},
