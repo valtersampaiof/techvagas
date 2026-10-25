@@ -20,7 +20,8 @@ const REGIMES: { valor: FiltroDeContrato | ""; rotulo: string }[] = [
 ];
 
 /**
- * Regime de contratação (CLT, PJ ou estágio) e, logo depois, o nível. São regimes com leis e carreiras diferentes:
+ * Regime de contratação (CLT, PJ ou estágio) e, logo depois, o nível. Cada um é um campo de seleção, para ficarem na
+ * mesma linha dos outros filtros. São regimes com leis e carreiras diferentes:
  * os níveis oferecidos mudam conforme o regime, e estágio não tem nível.
  */
 export function RegimeENivel({ contratoInicial, tipoInicial, classeDoSeletor, comTitulos = false, classeDoTitulo = "" }: Props) {
@@ -34,34 +35,28 @@ export function RegimeENivel({ contratoInicial, tipoInicial, classeDoSeletor, co
     if (!(NIVEIS_DO_REGIME[novo] as readonly string[]).includes(tipo)) setTipo("");
   }
 
+  const titulo = (texto: string) => (comTitulos ? <span className={classeDoTitulo}>{texto}</span> : null);
+
   return (
     <>
-      <fieldset className="basis-full">
-        <legend className={comTitulos ? classeDoTitulo : "text-sm font-medium text-slate-700"}>Regime de contratação</legend>
-        <div className="mt-1 flex flex-wrap gap-2">
-          {REGIMES.map((r) => (
-            <label key={r.valor || "qualquer"} className="cursor-pointer">
-              <input
-                type="radio"
-                name="contrato"
-                value={r.valor}
-                checked={contrato === r.valor}
-                onChange={() => escolherRegime(r.valor)}
-                className="peer sr-only"
-              />
-              <span className="inline-block rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm text-slate-700 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-400">
-                {r.rotulo}
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <label>
+        {titulo("Regime de contratação")}
+        <select
+          name="contrato"
+          value={contrato}
+          onChange={(e) => escolherRegime(e.target.value as FiltroDeContrato | "")}
+          className={classeDoSeletor}
+          aria-label="Regime de contratação"
+        >
+          {REGIMES.map((r) => <option key={r.valor || "qualquer"} value={r.valor}>{r.rotulo}</option>)}
+        </select>
+      </label>
 
       {contrato === "estagio" ? (
-        <p className="basis-full text-sm text-slate-600">Estágio não tem nível: aparecem todas as vagas de estágio.</p>
+        <p className="self-center text-sm text-slate-600">Estágio não tem nível</p>
       ) : (
-        <label className={comTitulos ? "" : undefined}>
-          {comTitulos && <span className={classeDoTitulo}>Nível</span>}
+        <label>
+          {titulo("Nível")}
           <select name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} className={classeDoSeletor} aria-label="Nível da vaga">
             <option value="">Todos os níveis</option>
             {niveis.map((n) => <option key={n} value={n}>{ROTULO_TIPO[n]}</option>)}

@@ -159,15 +159,9 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
       ) : null}
 
       <form className="mt-5 space-y-3" method="get">
-        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3">
-          <RegimeENivel contratoInicial={contrato ?? ""} tipoInicial={tipo ?? ""} classeDoSeletor={seletor} />
-          <p className="basis-full text-xs text-slate-500">
-            CLT, PJ e estágio são regimes diferentes. Vagas que não informam o regime só aparecem em &quot;Qualquer regime&quot;.
-          </p>
-        </div>
-
         <div className="flex flex-wrap items-end gap-3">
           <input name="busca" defaultValue={filtros.busca} placeholder="Buscar por cargo ou empresa" className={`${seletor} min-w-60 flex-1`} />
+          <RegimeENivel contratoInicial={contrato ?? ""} tipoInicial={tipo ?? ""} classeDoSeletor={seletor} />
           <select name="modalidade" defaultValue={filtros.modalidade ?? ""} className={seletor} aria-label="Modalidade">
             <option value="">Qualquer modalidade</option>
             {Object.entries(ROTULO_MODALIDADE).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
@@ -176,6 +170,9 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
             <option value="">Todas as áreas</option>
             {areas.map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
+          <p className="basis-full text-xs text-slate-500">
+            CLT, PJ e estágio são regimes diferentes. Vagas que não informam o regime só aparecem em &quot;Qualquer regime&quot;.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3">

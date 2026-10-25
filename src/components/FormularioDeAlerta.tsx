@@ -29,15 +29,6 @@ export function FormularioDeAlerta({ acao, areas, inicial }: Props) {
   return (
     <form key={v ? JSON.stringify(v) : "inicial"} action={criar} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <div className="col-span-full flex flex-wrap gap-3">
-          <RegimeENivel
-            contratoInicial={valor("contrato")}
-            tipoInicial={valor("tipo")}
-            classeDoSeletor={campo}
-            comTitulos
-            classeDoTitulo={rotulo}
-          />
-        </div>
         <label>
           <span className={rotulo}>Estado</span>
           <select name="uf" defaultValue={valor("uf")} className={campo}>
@@ -49,6 +40,7 @@ export function FormularioDeAlerta({ acao, areas, inicial }: Props) {
           <span className={rotulo}>Cidade</span>
           <input name="cidade" defaultValue={valor("cidade")} placeholder="Ex.: Recife" maxLength={80} autoComplete="off" className={campo} />
         </label>
+        <RegimeENivel contratoInicial={valor("contrato")} tipoInicial={valor("tipo")} classeDoSeletor={campo} comTitulos classeDoTitulo={rotulo} />
         <label>
           <span className={rotulo}>Área</span>
           <select name="area" defaultValue={valor("area")} className={campo}>
