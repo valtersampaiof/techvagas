@@ -56,6 +56,19 @@ describe("listar com filtro de nível", () => {
   });
 });
 
+describe("listar com filtro de regime", () => {
+  it("CLT, PJ e estágio são separados; vaga que aceita os dois entra em CLT e em PJ", async () => {
+    await criar("Dev CLT", "Brasil", "remoto", { tipo: "pleno", contrato: "clt", idExterno: "r1" });
+    await criar("Dev PJ", "Brasil", "remoto", { tipo: "pleno", contrato: "pj", idExterno: "r2" });
+    await criar("Dev CLT ou PJ", "Brasil", "remoto", { tipo: "pleno", contrato: "clt_pj", idExterno: "r3" });
+    await criar("Dev Estágio", "Brasil", "remoto", { tipo: "estagio", contrato: "estagio", idExterno: "r4" });
+    expect(await titulos({ contrato: "clt", tipo: "pleno" })).toEqual(["Dev CLT", "Dev CLT ou PJ"]);
+    expect(await titulos({ contrato: "pj", tipo: "pleno" })).toEqual(["Dev CLT ou PJ", "Dev PJ"]);
+    expect(await titulos({ contrato: "estagio" })).toEqual(["Dev Estágio"]);
+    await db.vaga.deleteMany({ where: { idExterno: { in: ["r1", "r2", "r3", "r4"] } } });
+  });
+});
+
 describe("listar com filtro de estado e cidade", () => {
   it("sem filtro de região devolve tudo", async () => {
     expect((await fonte.listar({})).length).toBe(8);

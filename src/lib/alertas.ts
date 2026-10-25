@@ -37,8 +37,9 @@ const NOME_DO_TIPO: Record<string, string> = {
 
 /** "Estágios em Recife (PE)", "Vagas em Pernambuco, de Dados", "Vagas a partir de R$ 2.000 por mês"... */
 export function nomeDoAlerta(f: FiltrosDoAlerta): string {
-  const partes: string[] = [NOME_DO_TIPO[f.tipo] ?? "Vagas"];
-  if (f.contrato) partes.push(ROTULO_CONTRATO[f.contrato] ?? f.contrato);
+  const ehEstagio = f.contrato === "estagio";
+  const partes: string[] = [ehEstagio ? "Estágios" : (NOME_DO_TIPO[f.tipo] ?? "Vagas")];
+  if (f.contrato && !ehEstagio) partes.push(ROTULO_CONTRATO[f.contrato] ?? f.contrato);
   if (f.cidade) partes.push(`em ${f.cidade}${f.uf ? ` (${f.uf})` : ""}`);
   else if (f.uf) partes.push(`em ${nomeDoEstado(f.uf)}`);
   if (f.area) partes.push(`de ${f.area}`);
@@ -51,8 +52,8 @@ export function resumoDosFiltros(f: FiltrosDoAlerta): string {
   const itens: string[] = [];
   if (f.uf) itens.push(`estado: ${nomeDoEstado(f.uf)}`);
   if (f.cidade) itens.push(`cidade: ${f.cidade}`);
-  if (f.tipo) itens.push(`nível: ${ROTULO_TIPO[f.tipo] ?? f.tipo}`);
   if (f.contrato) itens.push(`contratação: ${ROTULO_CONTRATO[f.contrato] ?? f.contrato}`);
+  if (f.tipo) itens.push(`nível: ${ROTULO_TIPO[f.tipo] ?? f.tipo}`);
   if (f.area) itens.push(`área: ${f.area}`);
   if (f.salarioMinimo) itens.push(`salário a partir de ${formatarReais(f.salarioMinimo)}`);
   if (f.uf || f.cidade) itens.push(f.incluirRemotas ? "com vagas remotas" : "sem vagas remotas");

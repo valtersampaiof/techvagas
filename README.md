@@ -189,6 +189,9 @@ Cuidados que já estão no código:
   certificado"). O filtro de habilidade só traz cursos que ensinam aquilo de verdade (é a habilidade principal ou leva ao
   menos ao nível intermediário), com os feitos para ela primeiro. "Inglês" só é habilidade de curso que ensina inglês; o
   idioma em que o curso é dado tem filtro próprio.
+- **Regime antes do nível** (`src/components/RegimeENivel.tsx`, `src/lib/tipos-de-vaga.ts`): CLT, PJ e estágio vêm primeiro
+  na lista de vagas e no alerta, porque são regimes diferentes. Os níveis mudam com o regime: CLT tem trainee a liderança,
+  PJ vai de júnior a liderança (sem trainee) e estágio não tem nível. Trainee sem regime escrito no anúncio vale como CLT.
 - **Nível, contratação e modalidade** (`src/lib/vagas/normalizar.ts`): vaga "Pleno/Sênior" aparece nos dois níveis (campo
   `niveisExtras`); estágio nunca é CLT; "100% remoto" ou "Remote" no título valem mais que a modalidade da fonte.
 - **Filtro de estado e cidade** (`src/lib/localizacao.ts`): cada fonte escreve o local de um jeito ("Curitiba, Paraná",

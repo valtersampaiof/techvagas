@@ -137,7 +137,10 @@ export function detectarContrato(v: Pick<VagaExterna, "titulo" | "descricao" | "
   const t = normalizar([v.titulo, ...(v.rotulos ?? []), v.descricao].join(" "));
   const pj = PJ.test(t);
   const clt = CLT.test(t);
-  return pj && clt ? "clt_pj" : pj ? "pj" : clt ? "clt" : "";
+  if (pj && clt) return "clt_pj";
+  if (pj) return "pj";
+  // Trainee é programa de contratação com carteira assinada, mesmo quando o anúncio não escreve "CLT".
+  return clt || tipo === "trainee" ? "clt" : "";
 }
 
 /** "100% remoto", "(remoto)", "Remote", "home office" no título; "acesso remoto" e "possibilidade de home office" não contam. */

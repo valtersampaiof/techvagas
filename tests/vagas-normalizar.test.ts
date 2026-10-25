@@ -184,6 +184,11 @@ describe("detectarContrato", () => {
     expect(c("Contratação CLT.", { contrato: "pj" })).toBe("pj");
   });
 
+  it("trainee é CLT mesmo quando o anúncio não diz, mas PJ escrito vale", () => {
+    expect(detectarContrato({ titulo: "Programa de Trainee", descricao: "Python", rotulos: [] }, "trainee")).toBe("clt");
+    expect(detectarContrato({ titulo: "Trainee", descricao: "Contratação PJ", rotulos: [] }, "trainee")).toBe("pj");
+  });
+
   it("estágio nunca é CLT, mesmo que a fonte tenha marcado assim", () => {
     expect(c("Bolsa de R$ 1.500", { contrato: "clt" }, "estagio")).toBe("estagio");
   });

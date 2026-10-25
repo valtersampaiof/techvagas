@@ -8,7 +8,7 @@ import { SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { formatarPublicacao } from "@/lib/formatar";
 import { usuarioAtual } from "@/lib/sessao";
-import { ehFiltroDeContrato, ehTipoDeVaga } from "@/lib/tipos-de-vaga";
+import { ajustarRegime } from "@/lib/tipos-de-vaga";
 import { FormularioDeAlerta } from "@/components/FormularioDeAlerta";
 
 export const metadata: Metadata = { title: "Alertas por e-mail" };
@@ -41,8 +41,7 @@ export default async function PaginaDeAlertas({ searchParams }: { searchParams: 
   const inicial = {
     uf: p.uf?.toUpperCase() ?? "",
     cidade: p.cidade?.slice(0, 80) ?? "",
-    tipo: ehTipoDeVaga(p.tipo) ? p.tipo : "",
-    contrato: ehFiltroDeContrato(p.contrato) ? p.contrato : "",
+    ...ajustarRegime(p.contrato ?? "", p.tipo ?? ""),
     area: areas.includes(p.area ?? "") ? p.area! : "",
     salarioMinimo: (SALARIOS_MINIMOS as readonly number[]).includes(Number(p.salario)) ? String(p.salario) : "",
     incluirRemotas: !p.somenteRegiao,

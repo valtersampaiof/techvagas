@@ -6,12 +6,13 @@ import { PUBLICACOES, SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
 import { formatarReais } from "@/lib/formatar";
 import { ehDaRegiao, interpretarLocal, nomeDoEstado } from "@/lib/localizacao";
 import { numeroDaPagina, paginar } from "@/lib/paginacao";
-import { ROTULO_CONTRATO, ROTULO_MODALIDADE, ROTULO_TIPO } from "@/lib/rotulos";
-import { ehFiltroDeContrato, ehTipoDeVaga, FILTROS_DE_CONTRATO } from "@/lib/tipos-de-vaga";
+import { ROTULO_MODALIDADE } from "@/lib/rotulos";
+import { ajustarRegime } from "@/lib/tipos-de-vaga";
 import { idsDasVagasSalvas } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
 import { CartaoVaga } from "@/components/CartaoVaga";
 import { Paginacao } from "@/components/Paginacao";
+import { RegimeENivel } from "@/components/RegimeENivel";
 
 export const metadata: Metadata = { title: "Vagas" };
 
@@ -48,8 +49,10 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
   // Só valores conhecidos: qualquer outra coisa na URL é ignorada em vez de quebrar a página.
   const publicadaHaDias = filtros.publicada && PUBLICACOES[filtros.publicada] ? Number(filtros.publicada) : undefined;
   const salarioMinimo = (SALARIOS_MINIMOS as readonly number[]).includes(Number(filtros.salario)) ? Number(filtros.salario) : undefined;
-  const tipo = ehTipoDeVaga(filtros.tipo) ? filtros.tipo : undefined;
-  const contrato = ehFiltroDeContrato(filtros.contrato) ? filtros.contrato : undefined;
+  // Regime primeiro; o nível só vale dentro do regime (estágio não tem nível, PJ não tem trainee).
+  const regime = ajustarRegime(filtros.contrato ?? "", filtros.tipo ?? "");
+  const tipo = regime.tipo || undefined;
+  const contrato = regime.contrato || undefined;
   const ordem = filtros.ordem === "recentes" || filtros.ordem === "salario" ? filtros.ordem : "padrao";
 
   const vagas = await fonteDeVagas.listar({
@@ -156,16 +159,15 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
       ) : null}
 
       <form className="mt-5 space-y-3" method="get">
+        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3">
+          <RegimeENivel contratoInicial={contrato ?? ""} tipoInicial={tipo ?? ""} classeDoSeletor={seletor} />
+          <p className="basis-full text-xs text-slate-500">
+            CLT, PJ e estágio são regimes diferentes. Vagas que não informam o regime só aparecem em &quot;Qualquer regime&quot;.
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-end gap-3">
           <input name="busca" defaultValue={filtros.busca} placeholder="Buscar por cargo ou empresa" className={`${seletor} min-w-60 flex-1`} />
-          <select name="tipo" defaultValue={tipo ?? ""} className={seletor} aria-label="Nível da vaga">
-            <option value="">Todos os níveis</option>
-            {Object.entries(ROTULO_TIPO).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-          </select>
-          <select name="contrato" defaultValue={contrato ?? ""} className={seletor} aria-label="Tipo de contratação">
-            <option value="">CLT ou PJ</option>
-            {FILTROS_DE_CONTRATO.map((v) => <option key={v} value={v}>{ROTULO_CONTRATO[v]}</option>)}
-          </select>
           <select name="modalidade" defaultValue={filtros.modalidade ?? ""} className={seletor} aria-label="Modalidade">
             <option value="">Qualquer modalidade</option>
             {Object.entries(ROTULO_MODALIDADE).map(([v, r]) => <option key={v} value={v}>{r}</option>)}

@@ -14,6 +14,7 @@ describe("alertas: nome, resumo e endereço da lista", () => {
     expect(nomeDoAlerta(filtros({ uf: "PE", tipo: "estagio" }))).toBe("Estágios em Pernambuco");
     expect(nomeDoAlerta(filtros({ tipo: "junior", area: "Dados", salarioMinimo: 2000 }))).toBe("Vagas júnior de Dados a partir de R$ 2.000 por mês");
     expect(nomeDoAlerta(filtros({ tipo: "trainee" }))).toBe("Trainees");
+    expect(nomeDoAlerta(filtros({ contrato: "estagio", uf: "PE" }))).toBe("Estágios em Pernambuco");
     expect(nomeDoAlerta(filtros({ tipo: "senior", contrato: "pj", area: "Dados" }))).toBe("Vagas sênior PJ de Dados");
     expect(nomeDoAlerta(filtros({ tipo: "pleno", uf: "SP" }))).toBe("Vagas pleno em São Paulo");
     expect(nomeDoAlerta(filtros({ contrato: "clt", uf: "PE" }))).toBe("Vagas CLT em Pernambuco");

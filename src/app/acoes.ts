@@ -11,7 +11,7 @@ import { MAX_ALERTAS_POR_PESSOA, gerarToken, nomeDoAlerta, temAlgumFiltro } from
 import { normalizar } from "@/lib/extrair-habilidades";
 import { SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
 import { ESTADOS } from "@/lib/localizacao";
-import { FILTROS_DE_CONTRATO, TIPOS_DE_VAGA } from "@/lib/tipos-de-vaga";
+import { ajustarRegime, FILTROS_DE_CONTRATO, TIPOS_DE_VAGA } from "@/lib/tipos-de-vaga";
 
 export type EstadoDoFormulario =
   | {
@@ -153,8 +153,10 @@ export async function criarAlerta(_: EstadoDoFormulario, formData: FormData): Pr
   const dados = esquemaAlerta.safeParse(digitado);
   if (!dados.success) return recusar(dados.error.issues[0].message);
 
+  // Regime e nível coerentes: estágio é um regime e não tem nível; PJ não tem trainee.
   const filtros = {
     ...dados.data,
+    ...ajustarRegime(dados.data.contrato, dados.data.tipo),
     salarioMinimo: dados.data.salarioMinimo ? Number(dados.data.salarioMinimo) : null,
     incluirRemotas: formData.get("incluirRemotas") === "1",
   };
