@@ -168,7 +168,8 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
         where: {
           AND: [
             filtroDaOrigem,
-            tipo ? { tipo } : {},
+            // Uma vaga "Pleno/Sênior" aparece nos dois níveis.
+            tipo ? { OR: [{ tipo }, { niveisExtras: { contains: `,${tipo},` } }] } : {},
             contrato ? { contrato: { in: contratosDoFiltro(contrato) } } : {},
             modalidade ? { modalidade } : {},
             area ? { area } : {},

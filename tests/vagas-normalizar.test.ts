@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HABILIDADES } from "@/lib/dados/habilidades";
-import { anosDeExperiencia, detectarContrato, detectarModalidade, detectarTipo, escolherArea, extrairRequisitos, normalizarVaga, pareceDeTI } from "@/lib/vagas/normalizar";
+import { anosDeExperiencia, detectarContrato, detectarModalidade, detectarTipo, escolherArea, extrairRequisitos, niveisExtrasDoTitulo, normalizarVaga, pareceDeTI } from "@/lib/vagas/normalizar";
 import { espacarFrases, htmlParaTexto, markdownParaTexto, truncar, urlSegura } from "@/lib/vagas/texto";
 import type { VagaExterna } from "@/lib/vagas/tipos";
 
@@ -124,6 +124,24 @@ describe("detectarTipo", () => {
   });
 });
 
+describe("niveisExtrasDoTitulo", () => {
+  it("'Pleno/Sênior' é pleno, mas também aceita sênior", () => {
+    expect(detectarTipo("Desenvolvedor Java Pleno/Sênior")).toBe("pleno");
+    expect(niveisExtrasDoTitulo("Desenvolvedor Java Pleno/Sênior", "pleno")).toBe(",senior,");
+    expect(niveisExtrasDoTitulo("Desenvolvedor FullStack Júnior/Pleno/Sênior", "junior")).toBe(",pleno,senior,");
+    expect(niveisExtrasDoTitulo("Dev PL/SR Backend", "pleno")).toBe(",senior,");
+  });
+  it("cargo de um nível só (ou 'semi-sênior') não ganha nível extra", () => {
+    expect(niveisExtrasDoTitulo("Desenvolvedor Pleno", "pleno")).toBe("");
+    expect(niveisExtrasDoTitulo("Desenvolvedor Semi-Sênior", "pleno")).toBe("");
+    expect(niveisExtrasDoTitulo("Desenvolvedor Sênior", "senior")).toBe("");
+  });
+  it("'Tech Leader' e 'Liderança' são liderança", () => {
+    expect(detectarTipo("Tech Leader de Engenharia")).toBe("lideranca");
+    expect(detectarTipo("Liderança de Design de Produtos")).toBe("lideranca");
+  });
+});
+
 describe("anosDeExperiencia", () => {
   it.each([
     ["Experiência mínima de 4 anos em desenvolvimento", 4],
@@ -165,6 +183,10 @@ describe("detectarContrato", () => {
     expect(c("Bolsa de R$ 1.500", {}, "estagio")).toBe("estagio");
     expect(c("Contratação CLT.", { contrato: "pj" })).toBe("pj");
   });
+
+  it("estágio nunca é CLT, mesmo que a fonte tenha marcado assim", () => {
+    expect(c("Bolsa de R$ 1.500", { contrato: "clt" }, "estagio")).toBe("estagio");
+  });
 });
 
 describe("pareceDeTI (cargos de todos os níveis)", () => {
@@ -197,6 +219,15 @@ describe("detectarModalidade", () => {
     expect(detectarModalidade(vaga({ descricao: "Trabalho 100% home office" }))).toBe("remoto");
     expect(detectarModalidade(vaga({ descricao: "Modelo híbrido, 3 dias remotos" }))).toBe("hibrido");
     expect(detectarModalidade(vaga({ descricao: "Vaga presencial na Paulista" }))).toBe("presencial");
+  });
+  it("título que diz 'remoto' (em português ou inglês) vale mais que a modalidade da fonte", () => {
+    expect(detectarModalidade(vaga({ titulo: "Analista de Testes SR (100% REMOTO)", modalidade: "presencial" }))).toBe("remoto");
+    expect(detectarModalidade(vaga({ titulo: "React Developer Remote" }))).toBe("remoto");
+    expect(detectarModalidade(vaga({ titulo: "Net Developer (Remote)", modalidade: "hibrido" }))).toBe("remoto");
+  });
+  it("'acesso remoto' e 'possibilidade de home office' no título não tornam a vaga remota", () => {
+    expect(detectarModalidade(vaga({ titulo: "Analista de Redes (acesso remoto a servidores)", modalidade: "hibrido" }))).toBe("hibrido");
+    expect(detectarModalidade(vaga({ titulo: "Suporte, possibilidade de home office após 90 dias", modalidade: "presencial" }))).toBe("presencial");
   });
 });
 

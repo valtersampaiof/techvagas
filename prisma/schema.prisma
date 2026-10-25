@@ -57,6 +57,8 @@ model Vaga {
   cidadeChave  String @default("")
   modalidade  String // "presencial" | "hibrido" | "remoto"
   tipo        String // "estagio" | "trainee" | "junior" | "pleno" | "senior" | "lideranca" | "indefinido"
+  // Outros níveis que o título aceita, entre vírgulas (",senior," numa vaga "Pleno/Sênior"); vazio na maioria.
+  niveisExtras String @default("")
   // Como a pessoa é contratada: "clt", "pj", "clt_pj" (aceita os dois), "estagio" ou "" (o anúncio não diz).
   contrato    String @default("")
   area        String

@@ -44,6 +44,18 @@ afterAll(async () => {
 
 const titulos = async (f: Parameters<typeof fonte.listar>[0]) => (await fonte.listar(f)).map((v) => v.titulo).sort();
 
+describe("listar com filtro de nível", () => {
+  it("vaga 'Pleno/Sênior' aparece nos dois níveis; as de um nível só, no seu", async () => {
+    await criar("Dev Pleno/Sênior", "Brasil", "remoto", { tipo: "pleno", niveisExtras: ",senior,", idExterno: "n1" });
+    await criar("Dev Pleno", "Brasil", "remoto", { tipo: "pleno", idExterno: "n2" });
+    await criar("Dev Sênior", "Brasil", "remoto", { tipo: "senior", idExterno: "n3" });
+    expect(await titulos({ tipo: "pleno" })).toEqual(["Dev Pleno", "Dev Pleno/Sênior"]);
+    expect(await titulos({ tipo: "senior" })).toEqual(["Dev Pleno/Sênior", "Dev Sênior"]);
+    expect(await titulos({ tipo: "junior" })).toEqual([]);
+    await db.vaga.deleteMany({ where: { idExterno: { in: ["n1", "n2", "n3"] } } });
+  });
+});
+
 describe("listar com filtro de estado e cidade", () => {
   it("sem filtro de região devolve tudo", async () => {
     expect((await fonte.listar({})).length).toBe(8);

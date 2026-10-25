@@ -11,6 +11,8 @@ export type { TipoDeVaga } from "../tipos-de-vaga";
 
 export type VagaNormalizada = VagaExterna & {
   tipo: TipoDeVaga;
+  /** Outros níveis que o título aceita (",senior,"), ou "". */
+  niveisExtras: string;
   contrato: Contrato;
   /** Atividades da vaga em poucas linhas, para o cartão. */
   resumo: string;
@@ -30,7 +32,7 @@ const JUNIOR = /\b(junior|jr|entry[ -]level|iniciante)\b/;
 const PLENO = /\b(pleno|pl(?![/-]?\s*sql)|mid|middle|mid[ -]level|intermediate)\b/;
 const SENIOR = /\b(senior|sr(?!\s*\d)|especialista|specialist|staff|principal|arquiteto|arquiteta|architect|expert)\b/;
 const LIDERANCA =
-  /\b(gerente|coordenador|coordenadora|head|diretor|diretora|supervisor|supervisora|lider|lead|cto|cio|ciso|engineering manager|manager)\b/;
+  /\b(gerente|coordenador|coordenadora|head|diretor|diretora|supervisor|supervisora|lider|leader|lideranca|lead|cto|cio|ciso|engineering manager|manager)\b/;
 const PAPEL = /\b(analista|desenvolvedor|desenvolvedora|engenheiro|engenheira|developer|engineer|programador|programadora|tecnico|administrador|consultor|consultora|arquiteto|dba|especialista)\b/;
 /** "Analista de Sistemas II": a numeração romana no fim do cargo indica o nível (I júnior, II pleno, III em diante sênior). */
 const NIVEL_ROMANO = /\b(i|ii|iii|iv)\s*$/;
@@ -43,6 +45,21 @@ function nivelNoTexto(textoNormalizado: string): TipoDeVaga | null {
   if (LIDERANCA.test(t)) return "lideranca";
   if (SENIOR.test(t)) return "senior";
   return null;
+}
+
+/**
+ * Outros níveis que o título também aceita: "Pleno/Sênior" é uma vaga de nível pleno (o menor), mas também serve a quem
+ * é sênior, e deve aparecer nos dois filtros. Devolve ",senior," (com vírgulas nas pontas, para a busca no banco) ou "".
+ */
+export function niveisExtrasDoTitulo(titulo: string, tipo: TipoDeVaga): string {
+  if (tipo !== "junior" && tipo !== "pleno") return "";
+  const t = normalizar(titulo).replace(/semi[ -]?senior/g, "pleno");
+  const presentes: TipoDeVaga[] = [];
+  if (/\b(junior|jr)\b/.test(t)) presentes.push("junior");
+  if (PLENO.test(t)) presentes.push("pleno");
+  if (/\b(senior|sr(?!\s*\d))\b/.test(t)) presentes.push("senior");
+  const extras = presentes.filter((n) => n !== tipo);
+  return extras.length > 0 ? `,${extras.join(",")},` : "";
 }
 
 const ANOS = String.raw`(\d{1,2})\s*(?:\+|ou mais)?\s*(?:(?:a|ate|-|to)\s*\d{1,2}\s*)?`;
@@ -114,19 +131,26 @@ const CLT = /\b(clt|carteira assinada|regime clt|contratacao clt|efetivo)\b/;
  * Sem menção, fica vazio: o site prefere não informar a chutar.
  */
 export function detectarContrato(v: Pick<VagaExterna, "titulo" | "descricao" | "rotulos" | "contrato">, tipo: TipoDeVaga): Contrato {
-  if (v.contrato) return v.contrato;
+  // Estágio nunca é CLT nem PJ, mesmo que a fonte tenha marcado assim (a Gupy marca vários como "efetivo").
   if (tipo === "estagio") return "estagio";
+  if (v.contrato) return v.contrato;
   const t = normalizar([v.titulo, ...(v.rotulos ?? []), v.descricao].join(" "));
   const pj = PJ.test(t);
   const clt = CLT.test(t);
   return pj && clt ? "clt_pj" : pj ? "pj" : clt ? "clt" : "";
 }
 
+/** "100% remoto", "(remoto)", "Remote", "home office" no título; "acesso remoto" e "possibilidade de home office" não contam. */
+const TITULO_REMOTO = /\b(100 ?(remot[oa]|home ?office)|totalmente remot[oa]|remote)\b/;
+const TITULO_REMOTO_ENTRE_PARENTESES = /[(\[]\s*remot[oa]\s*[)\]]/i;
+
 export function detectarModalidade(v: VagaExterna): "remoto" | "hibrido" | "presencial" {
+  // Quando o próprio título diz que é remoto ("(100% remoto)", "React Developer Remote"), vale o título.
+  if (TITULO_REMOTO.test(normalizar(v.titulo)) || TITULO_REMOTO_ENTRE_PARENTESES.test(v.titulo)) return "remoto";
   if (v.modalidade) return v.modalidade;
   const t = normalizar([v.titulo, v.cidade, ...(v.rotulos ?? []), v.descricao.slice(0, 1500)].join(" "));
   if (/\bhibrid[oa]\b/.test(t)) return "hibrido";
-  if (/\b(remot[oa]|home ?office|anywhere|trabalho a distancia)\b/.test(t)) return "remoto";
+  if (/\b(remot[oa]|remote|home ?office|anywhere|trabalho a distancia)\b/.test(t)) return "remoto";
   return "presencial";
 }
 
@@ -305,6 +329,7 @@ export function normalizarVaga(v: VagaExterna, catalogo: HabilidadeBase[]): Vaga
     resumo: organizada.resumo,
     detalhes: JSON.stringify(organizada),
     tipo,
+    niveisExtras: niveisExtrasDoTitulo(v.titulo, tipo),
     contrato: detectarContrato(v, tipo),
     modalidade: detectarModalidade(v),
     area: escolherArea(requisitos.map((r) => r.slug), catalogo, v.titulo),
