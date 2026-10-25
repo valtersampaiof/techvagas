@@ -2,10 +2,12 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { calcularCompatibilidade } from "@/lib/compatibilidade";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
+import { PUBLICACOES, SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
 import { formatarReais } from "@/lib/formatar";
 import { ehDaRegiao, interpretarLocal, nomeDoEstado } from "@/lib/localizacao";
 import { numeroDaPagina, paginar } from "@/lib/paginacao";
 import { ROTULO_MODALIDADE, ROTULO_TIPO } from "@/lib/rotulos";
+import { idsDasVagasSalvas } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
 import { CartaoVaga } from "@/components/CartaoVaga";
 import { Paginacao } from "@/components/Paginacao";
@@ -27,8 +29,7 @@ type Parametros = {
   pagina?: string;
 };
 
-const PUBLICACOES: Record<string, string> = { "1": "Últimas 24 horas", "3": "Últimos 3 dias", "7": "Últimos 7 dias", "30": "Últimos 30 dias" };
-const SALARIOS_MINIMOS = [800, 1000, 1500, 2000, 3000, 4000, 6000];
+
 
 const seletor = "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm";
 const COMPATIBILIDADE_MINIMA = 60;
@@ -44,7 +45,7 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
   const temRegiao = !!(uf || cidade);
   // Só valores conhecidos: qualquer outra coisa na URL é ignorada em vez de quebrar a página.
   const publicadaHaDias = filtros.publicada && PUBLICACOES[filtros.publicada] ? Number(filtros.publicada) : undefined;
-  const salarioMinimo = SALARIOS_MINIMOS.includes(Number(filtros.salario)) ? Number(filtros.salario) : undefined;
+  const salarioMinimo = (SALARIOS_MINIMOS as readonly number[]).includes(Number(filtros.salario)) ? Number(filtros.salario) : undefined;
   const ordem = filtros.ordem === "recentes" || filtros.ordem === "salario" ? filtros.ordem : "padrao";
 
   const vagas = await fonteDeVagas.listar({
@@ -59,6 +60,7 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
     salarioMinimo,
   });
 
+  const salvas = new Set(usuario ? await idsDasVagasSalvas(usuario.id) : []);
   const habilidades = usuario?.habilidades.map((h) => ({ slug: h.habilidade.slug, nivel: h.nivel })) ?? [];
   const temPerfil = habilidades.length > 0;
 
@@ -226,6 +228,15 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
         </div>
       </form>
 
+      {(temRegiao || filtros.tipo || filtros.area || salarioMinimo) && (
+        <p className="mt-3 text-sm">
+          <Link href={`/alertas?${new URLSearchParams(Object.entries({ uf: filtros.uf, cidade: filtros.cidade, tipo: filtros.tipo, area: filtros.area, salario: filtros.salario, somenteRegiao: filtros.somenteRegiao }).filter((e): e is [string, string] => !!e[1]))}`}
+            className="font-medium text-indigo-700 underline">
+            🔔 Receber por e-mail as vagas novas com estes filtros
+          </Link>
+        </p>
+      )}
+
       <p className="mt-4 text-sm text-slate-600" aria-live="polite">
         {pagina.total} vaga(s) encontrada(s)
         {resumoDaRegiao && (
@@ -240,7 +251,9 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
       </p>
 
       <div className="mt-3 grid gap-4 md:grid-cols-2">
-        {pagina.itens.map(({ vaga, percentual }) => <CartaoVaga key={vaga.id} vaga={vaga} percentual={percentual} />)}
+        {pagina.itens.map(({ vaga, percentual }) => (
+          <CartaoVaga key={vaga.id} vaga={vaga} percentual={percentual} salva={salvas.has(vaga.id)} logado={!!usuario} />
+        ))}
       </div>
       {pagina.total === 0 && (
         <p className="mt-8 text-center text-slate-500">

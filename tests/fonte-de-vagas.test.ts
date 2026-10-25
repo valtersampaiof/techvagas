@@ -149,3 +149,40 @@ describe("filtros de salário e de data", () => {
     expect(sem).toMatchObject({ salarioMin: null, salarioMax: null, salarioOrigem: "" });
   });
 });
+
+describe("vagas inativas, 'descobertas depois de' e porIds", () => {
+  const dia = (n: number) => new Date(Date.UTC(2026, 9, 20 + n));
+
+  beforeAll(async () => {
+    await db.vaga.deleteMany();
+    await criar("Antiga", "Recife, PE", "presencial", { primeiraVezEm: dia(0) });
+    await criar("Nova", "Recife, PE", "presencial", { primeiraVezEm: dia(3) });
+    await criar("Mais nova", "Recife, PE", "presencial", { primeiraVezEm: dia(5) });
+    await criar("Encerrada", "Recife, PE", "presencial", { primeiraVezEm: dia(4), ativa: false });
+  });
+
+  it("vagas inativas não aparecem em listar, areas nem locais", async () => {
+    expect(await titulos({})).toEqual(["Antiga", "Mais nova", "Nova"]);
+    expect((await fonte.locais())[0].vagas).toBe(3);
+  });
+
+  it("descobertasDepoisDe devolve só o que o site achou depois do momento dado (e ativas)", async () => {
+    expect(await titulos({ descobertasDepoisDe: dia(2) })).toEqual(["Mais nova", "Nova"]);
+    expect(await titulos({ descobertasDepoisDe: dia(3) })).toEqual(["Mais nova"]);
+    expect(await titulos({ descobertasDepoisDe: dia(5) })).toEqual([]);
+  });
+
+  it("porIds devolve inclusive as inativas, na ordem pedida, e ignora o que não existe", async () => {
+    const todas = await db.vaga.findMany({ orderBy: { id: "asc" } });
+    const encerrada = todas.find((v) => v.titulo === "Encerrada")!;
+    const antiga = todas.find((v) => v.titulo === "Antiga")!;
+    const r = await fonte.porIds([encerrada.id, 999_999, antiga.id]);
+    expect(r.map((v) => [v.titulo, v.ativa])).toEqual([["Encerrada", false], ["Antiga", true]]);
+    expect(await fonte.porIds([])).toEqual([]);
+  });
+
+  it("obter devolve uma vaga inativa (a página dela continua abrindo para quem a salvou)", async () => {
+    const encerrada = await db.vaga.findFirstOrThrow({ where: { titulo: "Encerrada" } });
+    expect((await fonte.obter(encerrada.id))?.ativa).toBe(false);
+  });
+});

@@ -7,7 +7,9 @@ import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
 import { formatarPublicacao, formatarSalario } from "@/lib/formatar";
 import { ROTULO_MODALIDADE, ROTULO_ORIGEM, ROTULO_TIPO, rotuloDoLocal } from "@/lib/rotulos";
+import { idsDasVagasSalvas } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
+import { BotaoSalvar } from "@/components/BotaoSalvar";
 import { CartaoCurso } from "@/components/CartaoCurso";
 import { RequisitoComCursos } from "@/components/RequisitoComCursos";
 import { SeloCompatibilidade } from "@/components/SeloCompatibilidade";
@@ -36,6 +38,7 @@ export default async function PaginaDaVaga({ params }: Props) {
   const logado = usuario !== null;
   const temPerfil = habilidades.length > 0;
 
+  const salva = usuario ? (await idsDasVagasSalvas(usuario.id)).includes(vaga.id) : false;
   const semRequisitos = vaga.requisitos.length === 0;
   const salario = formatarSalario(vaga);
   const publicacao = formatarPublicacao(vaga.publicadaEm);
@@ -71,8 +74,17 @@ export default async function PaginaDaVaga({ params }: Props) {
             <h1 className="text-2xl font-bold">{vaga.titulo}</h1>
             <p className="text-slate-600">{vaga.empresa} · {rotuloDoLocal(vaga)}</p>
           </div>
-          {temPerfil && !semRequisitos && <SeloCompatibilidade percentual={compat.percentual} />}
+          <div className="flex items-center gap-3">
+            {temPerfil && !semRequisitos && <SeloCompatibilidade percentual={compat.percentual} />}
+            <BotaoSalvar vagaId={vaga.id} salvaInicial={salva} logado={logado} variante="completo" />
+          </div>
         </div>
+        {!vaga.ativa && (
+          <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-800">
+            <strong>Possivelmente encerrada.</strong> Esta vaga não apareceu mais na fonte. Confirme no anúncio original antes de
+            se candidatar.
+          </p>
+        )}
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">{ROTULO_TIPO[vaga.tipo] ?? vaga.tipo}</span>
           <span className="rounded bg-slate-100 px-2 py-1">{ROTULO_MODALIDADE[vaga.modalidade] ?? vaga.modalidade}</span>

@@ -7,13 +7,17 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { criarSessao, encerrarSessao, usuarioAtual } from "@/lib/sessao";
 import { ehNivel } from "@/lib/niveis";
+import { MAX_ALERTAS_POR_PESSOA, gerarToken, nomeDoAlerta, temAlgumFiltro } from "@/lib/alertas";
+import { normalizar } from "@/lib/extrair-habilidades";
+import { SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
+import { ESTADOS } from "@/lib/localizacao";
 
 export type EstadoDoFormulario =
   | {
       erro?: string;
       ok?: string;
       /** Valores digitados, devolvidos para o formulário não apagar o que a pessoa escreveu. */
-      campos?: { nome?: string; email?: string };
+      campos?: Record<string, string>;
     }
   | undefined;
 
@@ -97,4 +101,107 @@ export async function salvarPerfil(_: EstadoDoFormulario, formData: FormData): P
 
   revalidatePath("/", "layout");
   return { ok: "Perfil salvo! Agora veja as vagas que combinam com você." };
+}
+
+export type ResultadoDeSalvar = { salva: boolean } | { erro: "login" | "inexistente" };
+
+/** Salva a vaga para a pessoa logada ou, se já estava salva, tira das salvas. */
+export async function alternarVagaSalva(vagaId: number): Promise<ResultadoDeSalvar> {
+  const usuario = await usuarioAtual();
+  if (!usuario) return { erro: "login" };
+  if (!Number.isInteger(vagaId) || vagaId <= 0) return { erro: "inexistente" };
+  if (!(await db.vaga.findUnique({ where: { id: vagaId }, select: { id: true } }))) return { erro: "inexistente" };
+
+  const chave = { usuarioId_vagaId: { usuarioId: usuario.id, vagaId } };
+  const jaSalva = await db.vagaSalva.findUnique({ where: chave });
+  if (jaSalva) await db.vagaSalva.delete({ where: chave });
+  else await db.vagaSalva.create({ data: { usuarioId: usuario.id, vagaId } });
+
+  revalidatePath("/salvas");
+  return { salva: !jaSalva };
+}
+
+const esquemaAlerta = z.object({
+  uf: z.string().trim().toUpperCase().refine((v) => v === "" || ESTADOS.some((e) => e.uf === v), "Estado inválido."),
+  cidade: z.string().trim().max(80, "O nome da cidade está grande demais."),
+  tipo: z.enum(["", "estagio", "trainee", "junior"], { message: "Tipo de vaga inválido." }),
+  area: z.string().trim().max(60, "Área inválida."),
+  salarioMinimo: z
+    .string()
+    .refine((v) => v === "" || (SALARIOS_MINIMOS as readonly number[]).includes(Number(v)), "Salário mínimo inválido."),
+});
+
+/** Cria um alerta: a pessoa passa a receber por e-mail as vagas NOVAS que combinam com estes filtros. */
+export async function criarAlerta(_: EstadoDoFormulario, formData: FormData): Promise<EstadoDoFormulario> {
+  const usuario = await usuarioAtual();
+  if (!usuario) redirect("/entrar");
+
+  const digitado = {
+    uf: String(formData.get("uf") ?? ""),
+    cidade: String(formData.get("cidade") ?? ""),
+    tipo: String(formData.get("tipo") ?? ""),
+    area: String(formData.get("area") ?? ""),
+    salarioMinimo: String(formData.get("salarioMinimo") ?? ""),
+    incluirRemotas: formData.get("incluirRemotas") === "1" ? "1" : "",
+  };
+  // Em qualquer erro, devolvemos o que a pessoa escolheu: o formulário se limpa sozinho depois de cada envio.
+  const recusar = (erro: string): EstadoDoFormulario => ({ erro, campos: digitado });
+
+  const dados = esquemaAlerta.safeParse(digitado);
+  if (!dados.success) return recusar(dados.error.issues[0].message);
+
+  const filtros = {
+    ...dados.data,
+    salarioMinimo: dados.data.salarioMinimo ? Number(dados.data.salarioMinimo) : null,
+    incluirRemotas: formData.get("incluirRemotas") === "1",
+  };
+  if (!temAlgumFiltro(filtros)) return recusar("Escolha pelo menos um filtro (estado, cidade, tipo, área ou salário) para o alerta.");
+
+  const existentes = await db.alerta.findMany({ where: { usuarioId: usuario.id } });
+  if (existentes.length >= MAX_ALERTAS_POR_PESSOA) {
+    return recusar(`Você já tem ${MAX_ALERTAS_POR_PESSOA} alertas, o máximo. Exclua algum para criar outro.`);
+  }
+  const cidadeChave = normalizar(filtros.cidade).trim();
+  const repetido = existentes.some(
+    (a) =>
+      a.uf === filtros.uf && a.cidadeChave === cidadeChave && a.tipo === filtros.tipo && a.area === filtros.area &&
+      a.salarioMinimo === filtros.salarioMinimo && a.incluirRemotas === filtros.incluirRemotas,
+  );
+  if (repetido) return recusar("Você já tem um alerta igual a esse.");
+
+  await db.alerta.create({
+    data: { usuarioId: usuario.id, nome: nomeDoAlerta(filtros), ...filtros, cidadeChave, token: gerarToken() },
+  });
+  revalidatePath("/alertas");
+  return { ok: `Alerta criado! Vamos avisar em ${usuario.email} quando aparecerem vagas novas assim.` };
+}
+
+/** Só mexe em alertas da própria pessoa. */
+async function alertaDaPessoa(id: number) {
+  const usuario = await usuarioAtual();
+  if (!usuario) redirect("/entrar");
+  if (!Number.isInteger(id)) return null;
+  return db.alerta.findFirst({ where: { id, usuarioId: usuario.id } });
+}
+
+export async function removerAlerta(id: number) {
+  const alerta = await alertaDaPessoa(id);
+  if (alerta) await db.alerta.delete({ where: { id: alerta.id } });
+  revalidatePath("/alertas");
+}
+
+/** Pausa um alerta ativo ou reativa um pausado. */
+export async function alternarAlerta(id: number) {
+  const alerta = await alertaDaPessoa(id);
+  if (alerta) {
+    // Ao reativar, só contam as vagas achadas daqui para frente (não as que chegaram durante a pausa).
+    await db.alerta.update({ where: { id: alerta.id }, data: { ativo: !alerta.ativo, ...(alerta.ativo ? {} : { ultimoEnvioEm: new Date() }) } });
+  }
+  revalidatePath("/alertas");
+}
+
+/** Cancelamento pelo link do e-mail: dispensa login, porque o token é secreto. */
+export async function cancelarAlertaPorToken(token: string) {
+  if (typeof token === "string" && token.length >= 20) await db.alerta.deleteMany({ where: { token } });
+  redirect("/alertas/cancelar?cancelado=1");
 }

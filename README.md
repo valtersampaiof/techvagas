@@ -18,7 +18,7 @@ npm run vagas:atualizar     # (opcional) busca vagas reais nas fontes; veja a se
 npm run dev                 # http://localhost:3000
 ```
 
-Outros comandos: `npm test` (testes), `npm run lint`, `npm run build`.
+Outros comandos: `npm test` (testes), `npm run lint`, `npm run build`, `npm run alertas:enviar` (veja "Alertas por e-mail").
 
 ## O que tem
 
@@ -28,6 +28,8 @@ Outros comandos: `npm test` (testes), `npm run lint`, `npm run build`.
 | `/vagas` | Lista com filtros (tipo, modalidade, área, **estado e cidade**, **data de publicação**, **salário/bolsa mínimo**), ordenação (compatibilidade, mais recentes, maior salário), % de compatibilidade (quando logado e com perfil) e paginação |
 | `/vagas/[id]` | Requisitos (✔ tem / ✘ falta) e cursos para cada lacuna. **Passe o mouse (ou toque) no nome de uma habilidade** para ver até 3 cursos gratuitos dela num mini quadro, sem sair da página |
 | `/cursos` | Catálogo com busca por texto e filtros (habilidade, preço, nível em que começa, **até onde leva**, idioma, duração, certificado), ordenação e paginação |
+| `/salvas` | Vagas que a pessoa marcou com a estrela (★). Se uma vaga salva sai da fonte, ela continua na lista, marcada como "possivelmente encerrada" |
+| `/alertas` | Alertas por e-mail: a pessoa escolhe estado, cidade, tipo, área e salário mínimo e recebe um aviso quando aparecem vagas **novas** assim |
 | `/perfil` | Envio do currículo em PDF, revisão e edição das habilidades |
 | `/entrar`, `/cadastrar` | Conta de estudante (e-mail e senha) |
 
@@ -83,6 +85,38 @@ Uma fonte que falhar ou estiver sem chave não impede as outras: o resumo no fim
 Para incluir outra fonte, crie um arquivo em `src/lib/vagas/fontes/` que cumpra a interface `FonteExterna`
 (`src/lib/vagas/tipos.ts`) e acrescente-o em `src/lib/vagas/fontes/index.ts`.
 
+## Alertas por e-mail
+
+Quem tem conta cria alertas em `/alertas` (até 10 por pessoa) ou clica em **"🔔 Receber por e-mail as vagas novas com estes
+filtros"** na lista de vagas, que já abre o formulário preenchido. Cada e-mail traz as vagas que o site achou **depois do
+último envio** (ou depois da criação do alerta), com o link para cancelar. Pausar, reativar e excluir também ficam em `/alertas`.
+
+O site **não envia e-mails sozinho**: quem envia é o comando abaixo, que você roda depois de buscar vagas novas.
+
+```bash
+npm run vagas:atualizar            # busca vagas
+npm run alertas:enviar             # manda os e-mails
+npm run alertas:enviar -- --simular   # só mostra o que seria enviado; não envia nem marca nada
+```
+
+Para enviar de verdade, preencha no `.env` os dados SMTP de qualquer serviço de e-mail (Gmail com "senha de app", Brevo,
+Resend, Mailgun...): `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_DE` (remetente) e `SITE_URL` (endereço
+público do site, usado nos links). Sem isso o site funciona normalmente, os alertas ficam guardados, `/alertas` avisa que
+o envio não está configurado e o comando só simula. Para rodar todo dia, agende os dois comandos (cron no Linux/Mac, Agendador
+de Tarefas no Windows), por exemplo todo dia às 8h: `0 8 * * * cd /caminho/techvagas && npm run vagas:atualizar && npm run alertas:enviar`.
+
+Cuidados que já estão no código:
+
+- **Sem repetição e sem perda**: o horário do último envio só é gravado depois que o e-mail saiu. Se o envio falhar, as mesmas
+  vagas entram na próxima tentativa. Ao reativar um alerta pausado, só contam as vagas achadas dali em diante.
+- **Cancelar sem login**: o link do e-mail abre uma página com o botão "Sim, cancelar". Só abrir o link **não** cancela
+  (programas de segurança de e-mail abrem links sozinhos). O e-mail também leva o cabeçalho `List-Unsubscribe`.
+- **Texto de fora é escapado** no HTML do e-mail (títulos e empresas vêm dos anúncios), e cada e-mail mostra no máximo 15 vagas.
+- **LGPD**: o e-mail só é usado para o que a pessoa pediu (os alertas dela). Quem publicar o site deve ter uma política de
+  privacidade e manter o cancelamento funcionando.
+- Bancos criados antes da coluna `primeiraVezEm` têm a data das vagas antigas em texto; o envio converte isso sozinho
+  (`src/lib/vagas/datas-antigas.ts`), senão vagas antigas apareceriam como novas.
+
 ## Como funciona
 
 - **Currículo**: `POST /api/curriculo` lê o texto do PDF (`unpdf`) e procura habilidades do catálogo
@@ -114,6 +148,9 @@ Para incluir outra fonte, crie um arquivo em `src/lib/vagas/fontes/` que cumpra 
 - **Catálogo** (`src/lib/dados/cursos*.ts`): um teste (`tests/catalogo.test.ts`) garante que toda habilidade tem pelo
   menos 3 cursos gratuitos, 2 gratuitos até o intermediário, 1 curso avançado e 1 pago até o intermediário. Se você
   adicionar uma habilidade nova, o teste avisa o que falta.
+- **Vagas salvas** (`src/lib/salvas.ts`, `src/components/BotaoSalvar.tsx`): a estrela muda na hora e grava no servidor; quem
+  não está logado vai para a tela de entrar. A limpeza das vagas que sumiram das fontes **não apaga** vaga que alguém salvou:
+  ela fica como inativa (`ativa = false`), some da lista geral e aparece em `/salvas` com o aviso de "possivelmente encerrada".
 - **Fonte de vagas** (`src/lib/fonte-de-vagas.ts`): interface `FonteDeVagas` que as páginas usam; lê o banco.
 
 ## Atenção antes de publicar

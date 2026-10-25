@@ -31,6 +31,8 @@ model Usuario {
   criadoEm      DateTime @default(now())
 
   habilidades   HabilidadeDoUsuario[]
+  vagasSalvas   VagaSalva[]
+  alertas       Alerta[]
 }
 
 model HabilidadeDoUsuario {
@@ -68,6 +70,12 @@ model Vaga {
   salarioMin    Int?
   salarioMax    Int?
   salarioOrigem String @default("")
+
+  // false quando a vaga sumiu da fonte mas alguém a tinha salvo: ela fica guardada, mas sai das listagens.
+  ativa         Boolean  @default(true)
+  // Quando o site achou a vaga pela primeira vez (é o que os alertas por e-mail usam para saber o que é "novo").
+  primeiraVezEm DateTime @default(now())
+  salvaPor      VagaSalva[]
   atualizadaEm  DateTime @default(now())
 
   requisitos  RequisitoDaVaga[]
@@ -112,4 +120,37 @@ model HabilidadeDoCurso {
   habilidade    Habilidade @relation(fields: [habilidadeId], references: [id], onDelete: Cascade)
 
   @@id([cursoId, habilidadeId])
+}
+
+model VagaSalva {
+  usuarioId Int
+  vagaId    Int
+  criadaEm  DateTime @default(now())
+
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  vaga      Vaga    @relation(fields: [vagaId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, vagaId])
+}
+
+/// Aviso por e-mail de vagas NOVAS que combinam com estes filtros.
+model Alerta {
+  id             Int       @id @default(autoincrement())
+  usuarioId      Int
+  nome           String
+  uf             String    @default("")
+  cidade         String    @default("")
+  cidadeChave    String    @default("")
+  incluirRemotas Boolean   @default(true)
+  tipo           String    @default("")
+  area           String    @default("")
+  salarioMinimo  Int?
+  ativo          Boolean   @default(true)
+  // Código secreto do link "cancelar este alerta" do e-mail (funciona sem login).
+  token          String    @unique
+  criadoEm       DateTime  @default(now())
+  // Só entram no e-mail as vagas achadas depois deste momento (ou depois da criação, no primeiro envio).
+  ultimoEnvioEm  DateTime?
+
+  usuario        Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 }

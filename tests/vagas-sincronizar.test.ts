@@ -137,6 +137,26 @@ describe("sincronizarVagas", () => {
     expect(v).toMatchObject({ salarioMin: null, salarioMax: null, salarioOrigem: "" });
   });
 
+  it("vaga que sumiu da fonte mas foi SALVA fica guardada como inativa; a não salva é apagada; se voltar, reativa", async () => {
+    const dev = (id: string, titulo: string) => vaga(id, titulo, "Python e SQL");
+    await sincronizarVagas(db, [fonte(() => [dev("s1", "Dev Python Júnior A"), dev("s2", "Dev Python Júnior B"), dev("s3", "Dev Python Júnior C")])]);
+    const salva = await db.vaga.findFirstOrThrow({ where: { origem: "falsa", idExterno: "s1" } });
+    const usuario = await db.usuario.create({ data: { nome: "Ana", email: "ana-sync@exemplo.com", senhaHash: "x" } });
+    await db.vagaSalva.create({ data: { usuarioId: usuario.id, vagaId: salva.id } });
+
+    // A fonte passa a trazer só a s3: s1 (salva) e s2 (não salva) sumiram.
+    await sincronizarVagas(db, [fonte(() => [dev("s3", "Dev Python Júnior C")])]);
+    const restantes = await db.vaga.findMany({ where: { origem: "falsa", idExterno: { in: ["s1", "s2", "s3"] } }, orderBy: { idExterno: "asc" } });
+    expect(restantes.map((v) => [v.idExterno, v.ativa])).toEqual([["s1", false], ["s3", true]]);
+    expect(await db.vagaSalva.count({ where: { vagaId: salva.id } })).toBe(1); // a vaga salva continua salva
+
+    // Reaparece na fonte: volta a ficar ativa.
+    await sincronizarVagas(db, [fonte(() => [dev("s1", "Dev Python Júnior A"), dev("s3", "Dev Python Júnior C")])]);
+    expect((await db.vaga.findUniqueOrThrow({ where: { id: salva.id } })).ativa).toBe(true);
+
+    await db.usuario.delete({ where: { id: usuario.id } });
+  });
+
   it("pula fonte indisponível e registra erro sem derrubar as outras", async () => {
     const resultados = await sincronizarVagas(db, [
       fonte(() => [], { rotulo: "Sem chave", indisponivel: () => "defina a chave" }),

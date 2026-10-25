@@ -18,6 +18,8 @@ export type FiltrosDeVagas = {
   salarioMinimo?: number;
   /** Só vagas publicadas nos últimos N dias. Vagas sem data ficam de fora. */
   publicadaHaDias?: number;
+  /** Só vagas que o site achou DEPOIS deste momento (usado pelos alertas por e-mail). */
+  descobertasDepoisDe?: Date;
   /** Relógio usado em "últimos N dias" (existe para os testes). */
   agora?: Date;
 };
@@ -34,6 +36,10 @@ export type VagaComRequisitos = {
   area: string;
   descricao: string;
   link: string;
+  /** false: a vaga sumiu da fonte, mas foi mantida porque alguém a salvou. */
+  ativa: boolean;
+  /** Quando o site achou a vaga pela primeira vez. */
+  primeiraVezEm: Date;
   /** Localização já interpretada (pode estar vazia, ex.: vagas "Brasil" ou remotas). */
   cidadeNome: string;
   uf: string;
@@ -57,6 +63,8 @@ export interface FonteDeVagas {
   areas(): Promise<string[]>;
   /** Cidades (e estados) que têm vagas, com a quantidade, da maior para a menor. */
   locais(): Promise<LocalComVagas[]>;
+  /** As vagas com estes números (inclusive as inativas), na ordem pedida; as que não existem mais ficam de fora. */
+  porIds(ids: number[]): Promise<VagaComRequisitos[]>;
 }
 
 const incluirRequisitos = {
@@ -76,6 +84,8 @@ type VagaDoBanco = {
   descricao: string;
   link: string;
   origem: string;
+  ativa: boolean;
+  primeiraVezEm: Date;
   publicadaEm: Date | null;
   salarioMin: number | null;
   salarioMax: number | null;
@@ -97,6 +107,8 @@ function converter(v: VagaDoBanco): VagaComRequisitos {
     descricao: v.descricao,
     link: v.link,
     origem: v.origem,
+    ativa: v.ativa,
+    primeiraVezEm: v.primeiraVezEm,
     publicadaEm: v.publicadaEm,
     salarioMin: v.salarioMin,
     salarioMax: v.salarioMax,
@@ -116,12 +128,13 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
    * menos uma vaga real, elas deixam de aparecer nas listagens.
    */
   async function filtroDeOrigem() {
-    const reais = await banco.vaga.count({ where: { origem: { not: "exemplo" } } });
-    return reais > 0 ? { origem: { not: "exemplo" } } : {};
+    const reais = await banco.vaga.count({ where: { origem: { not: "exemplo" }, ativa: true } });
+    // Vagas inativas (que sumiram da fonte e só ficaram por estarem salvas) nunca entram nas listagens.
+    return reais > 0 ? { origem: { not: "exemplo" }, ativa: true } : { ativa: true };
   }
 
   return {
-    async listar({ busca, tipo, modalidade, area, uf, cidade, somenteRegiao, salarioMinimo, publicadaHaDias, agora = new Date() }) {
+    async listar({ busca, tipo, modalidade, area, uf, cidade, somenteRegiao, salarioMinimo, publicadaHaDias, descobertasDepoisDe, agora = new Date() }) {
       const chaveDaCidade = cidade ? normalizar(cidade).trim() : "";
       const regiao = {
         ...(uf ? { uf } : {}),
@@ -146,6 +159,7 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
               ? { OR: [{ salarioMax: { gte: salarioMinimo } }, { AND: [{ salarioMax: null }, { salarioMin: { gte: salarioMinimo } }] }] }
               : {},
             publicadaHaDias ? { publicadaEm: { gte: new Date(agora.getTime() - publicadaHaDias * 24 * 60 * 60 * 1000) } } : {},
+            descobertasDepoisDe ? { primeiraVezEm: { gt: descobertasDepoisDe } } : {},
           ],
         },
         include: incluirRequisitos,
@@ -167,6 +181,13 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
         orderBy: { area: "asc" },
       });
       return linhas.map((l) => l.area);
+    },
+
+    async porIds(ids) {
+      if (ids.length === 0) return [];
+      const vagas = await banco.vaga.findMany({ where: { id: { in: ids } }, include: incluirRequisitos });
+      const porId = new Map(vagas.map((v) => [v.id, converter(v)]));
+      return ids.flatMap((id) => (porId.has(id) ? [porId.get(id)!] : []));
     },
 
     async locais() {

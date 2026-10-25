@@ -51,3 +51,4 @@ next-env.d.ts
 # arquivos de apoio para testes manuais
 /.tmp-ui/
 /tests/.tmp-fonte/
+/tests/.tmp-alertas/

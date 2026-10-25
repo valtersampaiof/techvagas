@@ -72,6 +72,7 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
           salarioMin: v.salario ? Math.round(v.salario.min) : null,
           salarioMax: v.salario?.max != null ? Math.round(v.salario.max) : null,
           salarioOrigem: v.salario?.origem ?? "",
+          ativa: true, // reaparecendo na fonte, volta a valer
           atualizadaEm: new Date(),
           requisitos: {
             deleteMany: {},
@@ -89,12 +90,13 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
         });
       }
 
-      // Vagas dessa fonte que não apareceram mais saíram do ar. Só limpa se a busca trouxe algo,
-      // para uma falha silenciosa da fonte não apagar tudo.
+      // Vagas dessa fonte que não apareceram mais saíram do ar. Só limpa se a busca trouxe algo, para uma falha
+      // silenciosa da fonte não apagar tudo. As que alguém SALVOU não são apagadas: ficam guardadas, marcadas
+      // como inativas (somem das listagens, mas continuam em "vagas salvas", avisando que podem ter encerrado).
       if (aceitas.length > 0) {
-        await db.vaga.deleteMany({
-          where: { origem: fonte.origem, idExterno: { notIn: aceitas.map((v) => v.idExterno) } },
-        });
+        const sumiram = { origem: fonte.origem, idExterno: { notIn: aceitas.map((v) => v.idExterno) } };
+        await db.vaga.deleteMany({ where: { ...sumiram, salvaPor: { none: {} } } });
+        await db.vaga.updateMany({ where: { ...sumiram, salvaPor: { some: {} } }, data: { ativa: false } });
       }
 
       resultados.push({
