@@ -39,6 +39,8 @@ indicados são os que levam até o nível avançado, como o **CKA**.
 
 Next.js 16 (App Router) · React 19 · TypeScript · Prisma 6 com SQLite · Tailwind CSS 4 · Zod · Vitest
 
+Quer entender como foi feito, sem precisar saber programar? Leia [Como o TechVagas foi feito](docs/COMO-FOI-FEITO.md).
+
 ## Como rodar
 
 ```bash
