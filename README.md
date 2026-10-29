@@ -2,7 +2,7 @@
 
 **Site de vagas de TI no Brasil, do estágio à liderança, em CLT, PJ e estágio, que também diz o que estudar para chegar lá.**
 
-Projeto pessoal feito com Next.js, TypeScript e Prisma. Reúne mais de 3 mil vagas de várias fontes, compara o currículo
+Projeto pessoal feito com Next.js, TypeScript e Prisma. Reúne milhares de vagas de várias fontes, compara o currículo
 de quem procura com os requisitos de cada vaga e indica cursos gratuitos e pagos, com certificado, para fechar o que falta.
 
 ![Lista de vagas com filtros de regime, nível, modalidade, estado e salário](docs/img/vagas.png)
@@ -111,7 +111,7 @@ O que o comando faz com cada vaga:
 - deduz habilidades básicas pelo cargo (ex.: "Front-end" implica HTML/CSS e JavaScript; "Analista de Dados" implica análise de dados);
 - mantém vagas que claramente são de TI mesmo sem tecnologias no texto (ex.: "Estágio em Tecnologia da Informação"), mas **sem
   requisitos**: o site não calcula compatibilidade nem indica cursos para elas, e avisa isso na tela;
-- descarta banco de talentos e vagas que não são de TI (ex.: "Estágio para Direito", "Desenvolvedor de Negócios", "Analista de Redes Sociais"), inclusive as de quem compra, vende ou recruta para a área de TI ("Comprador Júnior - TI" cita TI, mas não é uma vaga de tecnologia); Se o cargo não indica
+- descarta banco de talentos e vagas que não são de TI (ex.: "Estágio para Direito", "Desenvolvedor de Negócios", "Analista de Redes Sociais"), inclusive as de quem compra, vende ou recruta para a área de TI ("Comprador Júnior - TI" cita TI, mas não é uma vaga de tecnologia). Se o cargo não indica
   tecnologia, o texto precisa pedir pelo menos duas habilidades técnicas fortes (inglês, suporte, metodologias ágeis e
   análise de dados sozinhos não bastam);
 - atualiza as que já existem e **remove as que saíram do ar** (nunca mexe nas vagas de outras fontes);
