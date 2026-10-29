@@ -1,12 +1,43 @@
 # TechVagas
 
-Site de vagas de TI no Brasil, **do estágio à liderança, em CLT e PJ**. Além de buscar vagas, ele compara o perfil de
-quem procura com os requisitos de cada vaga e indica **cursos gratuitos e pagos, com certificado**, para fechar o que falta.
+**Site de vagas de TI no Brasil, do estágio à liderança, em CLT, PJ e estágio, que também diz o que estudar para chegar lá.**
+
+Projeto pessoal feito com Next.js, TypeScript e Prisma. Reúne mais de 3 mil vagas de várias fontes, compara o currículo
+de quem procura com os requisitos de cada vaga e indica cursos gratuitos e pagos, com certificado, para fechar o que falta.
+
+![Lista de vagas com filtros de regime, nível, modalidade, estado e salário](docs/img/vagas.png)
+
+## Destaques
+
+- **Vagas de todos os níveis e regimes:** CLT, PJ e estágio vêm primeiro nos filtros, e os níveis mudam conforme o
+  regime (estágio não tem nível; PJ não tem trainee). Filtros também por modalidade, área, estado, cidade, data de
+  publicação e salário mínimo.
+- **Várias fontes, uma só lista:** Gupy, Adzuna, Jooble, páginas de carreira de empresas (Greenhouse, Lever e Ashby),
+  Remotive e comunidades do GitHub. A mesma vaga vinda de duas fontes aparece uma vez só.
+- **Texto da vaga organizado:** o anúncio é dividido em seções e os requisitos (escolaridade, experiência, idiomas) ficam
+  num quadro à parte, em vez de um bloco de texto corrido.
+- **Currículo em PDF:** o site lê o PDF, sugere as habilidades e a pessoa confere antes de salvar. O PDF não é guardado.
+- **Compatibilidade e cursos:** para cada vaga mostra o que a pessoa tem e o que falta, e sugere cursos para cada lacuna.
+  O catálogo tem 419 cursos para 46 habilidades, do nível iniciante ao avançado.
+- **Buscas exatas:** a busca vale por palavra inteira ("java" não traz "javascript"), ignora acentos e o filtro de
+  habilidade só traz cursos que ensinam aquilo de verdade.
+- **Vagas salvas e alertas por e-mail:** a pessoa marca vagas com a estrela e recebe um aviso quando aparecem vagas novas
+  com os filtros que escolheu.
+- **Testes automáticos:** mais de 400 testes (Vitest) cobrem a leitura das fontes, a classificação das vagas, os filtros,
+  a compatibilidade e os alertas.
+
+| Vaga com requisitos organizados | Cursos filtrados por habilidade |
+| --- | --- |
+| ![Página de uma vaga, com o quadro de requisitos](docs/img/vaga.png) | ![Catálogo de cursos filtrado por SQL, gratuitos e em português](docs/img/cursos.png) |
 
 Exemplo: a vaga pede *Segurança da Informação* e a pessoa não tem → o site mostra "60% compatível — falta:
 Segurança da Informação" e sugere, por exemplo, o **Certified in Cybersecurity (ISC2)** (gratuito) e o
 **Certificado Profissional Google de Cibersegurança** (pago). Numa vaga sênior que pede *Kubernetes*, os cursos
 indicados são os que levam até o nível avançado, como o **CKA**.
+
+## Tecnologias
+
+Next.js 16 (App Router) · React 19 · TypeScript · Prisma 6 com SQLite · Tailwind CSS 4 · Zod · Vitest
 
 ## Como rodar
 
