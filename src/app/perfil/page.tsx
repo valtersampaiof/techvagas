@@ -52,7 +52,15 @@ export default async function PaginaDePerfil() {
         acao={salvarPerfil}
       />
 
-      <section className="cartao mt-10 border-rose-200 p-5">
+      <section className="cartao mt-10 p-5">
+        <h2 className="font-semibold">Segurança da conta</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          {usuario.totpAtivoEm ? "A verificação em dois passos está ligada." : "Proteja a sua conta com a verificação em dois passos: além da senha, um código no celular."}
+        </p>
+        <Link href="/perfil/seguranca" className="btn-secundario mt-3">{usuario.totpAtivoEm ? "Gerenciar" : "Ligar a verificação em dois passos"}</Link>
+      </section>
+
+      <section className="cartao mt-6 border-rose-200 p-5">
         <h2 className="font-semibold text-rose-800">Excluir minha conta</h2>
         <p className="mt-1 text-sm text-slate-600">
           Apaga a sua conta e tudo o que está ligado a ela: perfil, vagas salvas, candidaturas e alertas. Não dá para desfazer.

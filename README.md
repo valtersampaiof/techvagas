@@ -31,8 +31,10 @@ de quem procura com os requisitos de cada vaga e indica cursos gratuitos e pagos
   as habilidades dele entram no perfil e as vagas passam a combinar mais.
 - **Vagas afirmativas:** filtro por grupo (PCD, mulheres, pessoas negras, LGBTQIA+), só quando o anúncio diz que a vaga é
   exclusiva ou afirmativa (declarações gerais de diversidade não contam).
-- **Conta segura:** "esqueci minha senha", confirmação de e-mail, bloqueio após senhas erradas, política de privacidade e
-  exclusão da própria conta.
+- **Conta segura:** verificação em dois passos (aplicativo de códigos, com QR code e códigos de recuperação), "esqueci minha
+  senha", confirmação de e-mail, bloqueio após senhas erradas, política de privacidade e exclusão da própria conta.
+- **Acabamento de site público:** acessibilidade conferida (nenhum problema nas 14 páginas testadas), páginas 404 e de erro em
+  português, cabeçalhos de segurança, `robots.txt`, `sitemap.xml` e imagem de compartilhamento.
 - **Pronto para a internet, de graça:** banco online (Turso), site na Vercel e atualização automática das vagas pelo GitHub
   Actions. Passo a passo em [`docs/COLOCAR-NO-AR.md`](docs/COLOCAR-NO-AR.md).
 - **Testes automáticos:** mais de 400 testes (Vitest) cobrem a leitura das fontes, a classificação das vagas, os filtros,
@@ -280,5 +282,4 @@ Cuidados que já estão no código:
 - Em produção, defina `SEGREDO_SESSAO` e troque o SQLite por Postgres (`prisma/schema.prisma`).
 - **Segurança da conta:** há "esqueci minha senha" (link por e-mail, válido por 1 hora e uma vez só), confirmação de e-mail
   (alertas só vão para e-mails confirmados), bloqueio de 15 minutos após 5 senhas erradas, página de privacidade e botão
-  para excluir a própria conta. Redefinir a senha encerra as sessões abertas. Falta ainda a autenticação em dois passos.
-  Sem servidor de e-mail configurado, as contas já nascem com o e-mail confirmado e a recuperação de senha fica indisponível.
+  para excluir a própria conta. Redefinir a senha encerra as sessões abertas.   Sem servidor de e-mail configurado, as contas já nascem com o e-mail confirmado e a recuperação de senha fica indisponível.

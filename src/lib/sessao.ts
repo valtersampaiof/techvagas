@@ -32,6 +32,33 @@ export async function criarSessao(usuarioId: number, versao = 0) {
   });
 }
 
+// Depois de acertar a senha, quem tem verificação em dois passos ganha só uma "licença" curta: ela serve apenas para chegar
+// à tela do código e não dá acesso a nada. A sessão de verdade só nasce depois do código.
+const COOKIE_PENDENTE = "sessao-2fa";
+const MINUTOS_PENDENTE = 5;
+
+export async function criarSessaoPendente(usuarioId: number, versao: number) {
+  const expira = new Date(Date.now() + MINUTOS_PENDENTE * 60_000);
+  const token = await new SignJWT({ usuarioId, v: versao, fase: "2fa" }).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime(expira).sign(segredo());
+  (await cookies()).set(COOKIE_PENDENTE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", expires: expira });
+}
+
+export async function lerSessaoPendente(): Promise<{ usuarioId: number; versao: number } | null> {
+  const token = (await cookies()).get(COOKIE_PENDENTE)?.value;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, segredo());
+    if (payload.fase !== "2fa" || typeof payload.usuarioId !== "number") return null;
+    return { usuarioId: payload.usuarioId, versao: typeof payload.v === "number" ? payload.v : 0 };
+  } catch {
+    return null;
+  }
+}
+
+export async function encerrarSessaoPendente() {
+  (await cookies()).delete(COOKIE_PENDENTE);
+}
+
 export async function encerrarSessao() {
   (await cookies()).delete(NOME_DO_COOKIE);
 }
@@ -41,7 +68,8 @@ async function lerSessao(): Promise<{ usuarioId: number; versao: number } | null
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, segredo());
-    if (typeof payload.usuarioId !== "number") return null;
+    // Uma "licença" pendente de dois passos nunca vale como sessão.
+    if (typeof payload.usuarioId !== "number" || payload.fase === "2fa") return null;
     return { usuarioId: payload.usuarioId, versao: typeof payload.v === "number" ? payload.v : 0 };
   } catch {
     return null;
@@ -61,6 +89,7 @@ export const usuarioAtual = cache(async () => {
       curso: true,
       cidade: true,
       emailConfirmadoEm: true,
+      totpAtivoEm: true,
       sessaoVersao: true,
       habilidades: { select: { nivel: true, habilidade: { select: { id: true, slug: true, nome: true } } } },
     },

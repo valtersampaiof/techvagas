@@ -5,13 +5,15 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { EstadoDoFormulario } from "@/app/acoes";
-import { consumirCodigoDeConta, criarCodigoDeConta, limparFalhasDeLogin } from "@/lib/contas";
+import { bloqueioDoLogin, consumirCodigoDeConta, criarCodigoDeConta, limparFalhasDeLogin, registrarFalhaDeLogin } from "@/lib/contas";
 import { emailDeRedefinicao } from "@/lib/contas-email";
 import { db } from "@/lib/db";
 import { emailConfigurado, enderecoDoSite } from "@/lib/email";
 import { enviarEmailDaConta } from "@/lib/email-da-conta";
 import { enviarConfirmacao } from "@/lib/enviar-confirmacao";
-import { encerrarSessao, usuarioAtual } from "@/lib/sessao";
+import QRCode from "qrcode";
+import { confirmarAtivacao, desativar, iniciarAtivacao, novosCodigosDeRecuperacao, verificarSegundoPasso } from "@/lib/dois-passos";
+import { criarSessao, encerrarSessao, encerrarSessaoPendente, lerSessaoPendente, usuarioAtual } from "@/lib/sessao";
 
 const MENSAGEM_PADRAO = "Se existir uma conta com este e-mail, enviamos um link para criar uma nova senha. Confira também a caixa de spam.";
 
@@ -87,4 +89,94 @@ export async function excluirConta(_: EstadoDoFormulario, formData: FormData): P
   await encerrarSessao();
   revalidatePath("/", "layout");
   redirect("/?conta=excluida");
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Verificação em dois passos
+// ---------------------------------------------------------------------------------------------------------------
+
+const MENSAGEM_BLOQUEIO = (minutos: number) => `Muitas tentativas erradas. Tente de novo em ${minutos} ${minutos === 1 ? "minuto" : "minutos"}.`;
+
+/** Confere o código do aplicativo (ou de recuperação) com o mesmo limite de tentativas do login. */
+async function conferirCodigo(usuarioId: number, codigo: string): Promise<{ ok: true; via: "aplicativo" | "recuperacao"; recuperacaoRestantes: number } | { erro: string }> {
+  const chave = `2fa:${usuarioId}`;
+  const minutos = await bloqueioDoLogin(db, chave);
+  if (minutos > 0) return { erro: MENSAGEM_BLOQUEIO(minutos) };
+  const r = await verificarSegundoPasso(db, usuarioId, codigo);
+  if (!r.ok) {
+    await registrarFalhaDeLogin(db, chave);
+    return { erro: "Código incorreto. Digite o código atual do aplicativo ou um código de recuperação." };
+  }
+  await limparFalhasDeLogin(db, chave);
+  return r;
+}
+
+/** Segunda tela do login: o código do aplicativo (ou um de recuperação). */
+export async function verificarEntrada(_: EstadoDoFormulario, formData: FormData): Promise<EstadoDoFormulario> {
+  const pendente = await lerSessaoPendente();
+  if (!pendente) redirect("/entrar");
+
+  const r = await conferirCodigo(pendente.usuarioId, String(formData.get("codigo") ?? ""));
+  if ("erro" in r) return { erro: r.erro };
+
+  const u = await db.usuario.findUnique({ where: { id: pendente.usuarioId }, select: { sessaoVersao: true } });
+  // Se a senha foi trocada nesse meio tempo, a licença antiga não vale.
+  if (!u || u.sessaoVersao !== pendente.versao) {
+    await encerrarSessaoPendente();
+    redirect("/entrar");
+  }
+  await encerrarSessaoPendente();
+  await criarSessao(pendente.usuarioId, u.sessaoVersao);
+  redirect(r.via === "recuperacao" ? "/perfil/seguranca?usou=recuperacao" : "/vagas");
+}
+
+export type PreparoDosDoisPassos = { segredo: string; qrSvg: string } | { erro: string };
+
+/** Primeiro passo de ligar a proteção: gera o segredo e o QR code. */
+export async function prepararDoisPassos(): Promise<PreparoDosDoisPassos> {
+  const usuario = await usuarioAtual();
+  if (!usuario) redirect("/entrar");
+  const r = await iniciarAtivacao(db, usuario.id, usuario.email);
+  if ("erro" in r) return r;
+  const qrSvg = await QRCode.toString(r.url, { type: "svg", margin: 1, width: 220, errorCorrectionLevel: "M" });
+  return { segredo: r.segredo, qrSvg };
+}
+
+/** Segundo passo: o código que o aplicativo mostrou. Liga a proteção e devolve os códigos de recuperação (só aparecem agora). */
+export async function confirmarDoisPassos(codigo: string): Promise<{ codigosDeRecuperacao: string[] } | { erro: string }> {
+  const usuario = await usuarioAtual();
+  if (!usuario) redirect("/entrar");
+  const minutos = await bloqueioDoLogin(db, `2fa:${usuario.id}`);
+  if (minutos > 0) return { erro: MENSAGEM_BLOQUEIO(minutos) };
+  const r = await confirmarAtivacao(db, usuario.id, codigo);
+  if ("erro" in r) {
+    await registrarFalhaDeLogin(db, `2fa:${usuario.id}`);
+    return r;
+  }
+  await limparFalhasDeLogin(db, `2fa:${usuario.id}`);
+  revalidatePath("/perfil/seguranca");
+  return r;
+}
+
+/** Desliga a proteção: pede a senha E um código (quem só tem a sessão aberta não consegue desligar). */
+export async function desativarDoisPassos(senha: string, codigo: string): Promise<{ ok: true } | { erro: string }> {
+  const usuario = await usuarioAtual();
+  if (!usuario) redirect("/entrar");
+  const registro = await db.usuario.findUnique({ where: { id: usuario.id }, select: { senhaHash: true } });
+  if (!registro || !(await bcrypt.compare(senha, registro.senhaHash))) return { erro: "Senha incorreta." };
+  const c = await conferirCodigo(usuario.id, codigo);
+  if ("erro" in c) return c;
+  await desativar(db, usuario.id);
+  revalidatePath("/perfil/seguranca");
+  return { ok: true };
+}
+
+/** Troca os códigos de recuperação por 8 novos. Pede um código atual do aplicativo. */
+export async function gerarNovosCodigos(codigo: string): Promise<{ codigosDeRecuperacao: string[] } | { erro: string }> {
+  const usuario = await usuarioAtual();
+  if (!usuario) redirect("/entrar");
+  const c = await conferirCodigo(usuario.id, codigo);
+  if ("erro" in c) return c;
+  revalidatePath("/perfil/seguranca");
+  return { codigosDeRecuperacao: await novosCodigosDeRecuperacao(db, usuario.id) };
 }

@@ -237,8 +237,16 @@ erradas, política de privacidade e botão para excluir a própria conta.
   entram no seu perfil, e as vagas passam a combinar mais com você.
 - **Acompanhar candidaturas:** cada vaga salva ganha uma etapa (me candidatei, entrevista, proposta...) e anotações.
 
-### Etapa 19 — Acabamentos
-Filtro de vagas afirmativas (só quando o anúncio diz que a vaga é exclusiva ou afirmativa), separação de palavras que as fontes
+### Etapa 19 — Dois passos para entrar
+Quem quiser pode ligar a **verificação em dois passos**: além da senha, o site pede um número de 6 dígitos que muda a cada 30
+segundos e aparece num aplicativo no celular (como o Google Authenticator). Mesmo que alguém descubra a senha, não entra. A
+pessoa liga lendo um **QR code**, e recebe 8 **códigos de recuperação** para o caso de perder o celular (cada um vale uma vez). O
+cálculo do número é o padrão internacional (RFC 6238) e foi conferido contra os exemplos oficiais da norma.
+
+### Etapa 20 — Acabamentos
+Uma varredura de acessibilidade (contraste de cores, ordem dos títulos, rótulos para leitores de tela) com ferramenta automática,
+páginas de "não encontrado" e de erro em português, cabeçalhos de segurança, arquivos para buscadores e uma imagem para quando o
+link do site for compartilhado. Filtro de vagas afirmativas (só quando o anúncio diz que a vaga é exclusiva ou afirmativa), separação de palavras que as fontes
 entregam coladas ("APIs RESTIntegrações"), mais cursos gratuitos em português e um comando que confere os links dos cursos.
 
 ---
@@ -321,7 +329,8 @@ Há uma lição aqui: **cada correção virou um teste automático**, para o mes
 - **Vagas afirmativas:** o filtro só pega as que o anúncio diz serem exclusivas ou afirmativas para um grupo. Declarações gerais
   de diversidade ficam de fora de propósito, então algumas vagas podem não aparecer.
 - **Segurança:** já existem "esqueci minha senha", confirmação de e-mail, bloqueio após senhas erradas e exclusão da conta.
-  Falta a **autenticação em dois passos** (um segundo código no celular).
+  A **verificação em dois passos** é opcional: cada pessoa precisa ligar. Se o segredo do site (`SEGREDO_SESSAO`) for trocado, os
+  segredos guardados deixam de funcionar e as pessoas precisam ligar de novo.
 - **Fonte não oficial:** a Gupy não oferece uma interface oficial para isso. O site usa o mesmo endereço do site deles, que
   pode mudar sem aviso. Se parar de funcionar, as outras fontes continuam.
 

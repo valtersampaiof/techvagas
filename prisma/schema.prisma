@@ -33,12 +33,18 @@ model Usuario {
   emailConfirmadoEm DateTime?
   // Sobe ao redefinir a senha: as sessões abertas antes deixam de valer.
   sessaoVersao  Int      @default(0)
+  // Autenticação em dois passos (aplicativo de códigos). O segredo fica cifrado; "ativo" só depois de confirmar um código.
+  totpSegredo     String?
+  totpAtivoEm     DateTime?
+  // Último "passo" de 30 segundos já usado: o mesmo código não vale duas vezes.
+  totpUltimoPasso Int?
 
   habilidades   HabilidadeDoUsuario[]
   vagasSalvas   VagaSalva[]
   alertas       Alerta[]
   tokens        TokenDeConta[]
   cursosConcluidos CursoConcluido[]
+  codigosDeRecuperacao CodigoDeRecuperacao[]
 }
 
 // Links de uso único enviados por e-mail ("confirmar e-mail" e "redefinir senha"). Só o resumo (hash) do código fica no banco.
@@ -53,6 +59,19 @@ model TokenDeConta {
   usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId, tipo])
+}
+
+// Códigos para entrar quando o celular se perde. Cada um vale uma vez; só o resumo (hash) fica no banco.
+model CodigoDeRecuperacao {
+  id         Int       @id @default(autoincrement())
+  usuarioId  Int
+  hash       String
+  usadoEm    DateTime?
+  criadoEm   DateTime  @default(now())
+
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, hash])
 }
 
 // Falhas de login por e-mail (existindo conta ou não, para não revelar quais e-mails têm conta).

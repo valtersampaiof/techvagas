@@ -23,6 +23,7 @@ export default function PaginaDePrivacidade() {
         <ul className="list-disc space-y-1.5 pl-5">
           <li><strong>Da sua conta:</strong> nome, e-mail e a sua senha, que fica embaralhada e não pode ser lida nem por nós.</li>
           <li><strong>Do seu perfil:</strong> as habilidades que você marca, o curso ou área de estudo e a cidade, se você preencher.</li>
+          <li><strong>Da verificação em dois passos, se você a ligar:</strong> o segredo do aplicativo de códigos (guardado cifrado) e o resumo dos seus códigos de recuperação.</li>
           <li><strong>Do que você faz no site:</strong> vagas salvas, etapas de candidatura, cursos marcados como concluídos e alertas por e-mail.</li>
         </ul>
         <p>

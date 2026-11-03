@@ -9,7 +9,7 @@ import { bloqueioDoLogin, limparFalhasDeLogin, registrarFalhaDeLogin } from "@/l
 import { emailConfigurado } from "@/lib/email";
 import { enviarConfirmacao } from "@/lib/enviar-confirmacao";
 import { emailValidado } from "@/lib/seguranca";
-import { criarSessao, encerrarSessao, usuarioAtual } from "@/lib/sessao";
+import { criarSessao, criarSessaoPendente, encerrarSessao, usuarioAtual } from "@/lib/sessao";
 import { ehNivel } from "@/lib/niveis";
 import { LIMITE_DA_ANOTACAO, ehEtapa } from "@/lib/candidaturas";
 import { habilidadesGanhasComCurso } from "@/lib/conclusao";
@@ -74,6 +74,11 @@ export async function entrar(_: EstadoDoFormulario, formData: FormData): Promise
     return { erro: "E-mail ou senha incorretos.", campos: { email } };
   }
   await limparFalhasDeLogin(db, email);
+  // Com verificação em dois passos, a senha sozinha não basta: falta o código do aplicativo.
+  if (usuario.totpAtivoEm) {
+    await criarSessaoPendente(usuario.id, usuario.sessaoVersao);
+    redirect("/entrar/verificacao");
+  }
   await criarSessao(usuario.id, usuario.sessaoVersao);
   redirect("/vagas");
 }
