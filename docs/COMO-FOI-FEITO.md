@@ -108,7 +108,7 @@ Confere se o código segue boas práticas e aponta descuidos, como uma variável
 - **Git** guarda o **histórico** de tudo que mudou, como o "controle de alterações" do Word, mas para o projeto inteiro. Cada
   alteração salva se chama **commit** e tem uma descrição.
 - **GitHub** é o site onde esse histórico fica guardado na internet e pode ser mostrado a outras pessoas (por exemplo, a
-  quem lê o seu currículo): https://github.com/valtersampaiof/vagas-ti
+  quem lê o seu currículo): https://github.com/valtersampaiof/techvagas
 
 ### 3.13 Node.js e npm — o motor e a loja de peças
 **Node.js** permite rodar JavaScript fora do navegador (é o "motor" da cozinha). **npm** é a "loja de peças": baixa todas as

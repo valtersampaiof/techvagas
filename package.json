@@ -10,10 +10,13 @@
     "test": "vitest run",
     "db:preparar": "prisma db push && prisma db seed",
     "postinstall": "prisma generate",
-    "vagas:atualizar": "tsx --env-file=.env scripts/atualizar-vagas.ts",
-    "alertas:enviar": "tsx --env-file=.env scripts/enviar-alertas.ts"
+    "vagas:atualizar": "tsx --env-file-if-exists=.env scripts/atualizar-vagas.ts",
+    "alertas:enviar": "tsx --env-file-if-exists=.env scripts/enviar-alertas.ts",
+    "banco:preparar": "tsx --env-file-if-exists=.env scripts/preparar-banco.ts && tsx --env-file-if-exists=.env prisma/seed.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "@prisma/adapter-libsql": "^6.19.3",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.13",

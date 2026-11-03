@@ -1,8 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { criarClienteDoBanco } from "../src/lib/cliente-do-banco";
 import { configuracaoDeEmail, criarEnviadorSmtp, enderecoDoSite } from "../src/lib/email";
 import { enviarAlertas } from "../src/lib/enviar-alertas";
 
-const db = new PrismaClient();
+const db = criarClienteDoBanco();
 
 async function main() {
   const config = configuracaoDeEmail();

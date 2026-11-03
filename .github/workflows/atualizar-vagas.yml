@@ -1,0 +1,61 @@
+# Atualiza as vagas sozinho (a cada 6 horas) e manda os alertas por e-mail.
+# Também pode ser rodado na hora: aba "Actions" do GitHub > "Atualizar vagas" > "Run workflow".
+# Os segredos (endereço do banco, chaves das fontes de vagas, e-mail) ficam em Settings > Secrets and variables > Actions.
+name: Atualizar vagas
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+# Duas atualizações ao mesmo tempo atrapalhariam uma à outra.
+concurrency:
+  group: atualizar-vagas
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+      ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+      JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      EMAIL_DE: ${{ secrets.EMAIL_DE }}
+      SITE_URL: ${{ secrets.SITE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar
+        run: npm ci
+
+      - name: Conferir o banco
+        run: |
+          if [ -z "$TURSO_DATABASE_URL" ]; then
+            echo "Falta o segredo TURSO_DATABASE_URL. Veja docs/COLOCAR-NO-AR.md."
+            exit 1
+          fi
+
+      - name: Preparar o banco (cria o que falta e atualiza o catálogo de cursos)
+        run: npm run banco:preparar
+
+      - name: Buscar vagas
+        run: npm run vagas:atualizar
+
+      - name: Enviar alertas por e-mail
+        run: npm run alertas:enviar

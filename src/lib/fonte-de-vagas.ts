@@ -94,9 +94,11 @@ type VagaDoBanco = {
   tipo: string;
   contrato: string;
   area: string;
-  descricao: string;
+  /** Fica de fora das listas quando não há busca (é o texto maior); `resumo` serve para o cartão. */
+  descricao?: string;
   resumo: string;
-  detalhes: string;
+  /** O anúncio organizado só é lido na página da vaga; as listas não o carregam. */
+  detalhes?: string;
   link: string;
   origem: string;
   ativa: boolean;
@@ -121,8 +123,8 @@ function converter(v: VagaDoBanco, habilidades: HabilidadesPorId, completa = fal
     contrato: v.contrato,
     area: v.area,
     // Na lista vale o resumo (vagas antigas, sem resumo, mostram o começo do texto).
-    descricao: completa ? v.descricao : v.resumo || v.descricao,
-    detalhes: completa ? v.detalhes : "",
+    descricao: completa ? (v.descricao ?? "") : v.resumo || (v.descricao ?? ""),
+    detalhes: completa ? (v.detalhes ?? "") : "",
     link: v.link,
     origem: v.origem,
     ativa: v.ativa,
@@ -184,6 +186,9 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
           ],
         },
         include: incluirRequisitos,
+        // Numa lista com milhares de vagas, os textos grandes pesam muito (principalmente com o banco online): o anúncio
+        // organizado nunca é preciso aqui, e o texto completo só serve para a busca.
+        omit: { detalhes: true, ...(busca ? {} : { descricao: true }) },
         orderBy: [{ publicadaEm: { sort: "desc", nulls: "last" } }, { id: "asc" }],
       });
       // A busca é feita aqui e não no banco: o banco não ignora acentos nem separa "java" de "javascript".
@@ -191,7 +196,7 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
       const achadas =
         palavras.length === 0
           ? vagas
-          : vagas.filter((v) => correspondeABusca(textoParaBusca(v.titulo, v.empresa, v.descricao), palavras));
+          : vagas.filter((v) => correspondeABusca(textoParaBusca(v.titulo, v.empresa, v.descricao ?? ""), palavras));
       return achadas.map((v) => converter(v, habilidades));
     },
 
@@ -212,7 +217,7 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
 
     async porIds(ids) {
       if (ids.length === 0) return [];
-      const vagas = await banco.vaga.findMany({ where: { id: { in: ids } }, include: incluirRequisitos });
+      const vagas = await banco.vaga.findMany({ where: { id: { in: ids } }, include: incluirRequisitos, omit: { detalhes: true } });
       const habilidades = await habilidadesPorId();
       const porId = new Map(vagas.map((v) => [v.id, converter(v, habilidades)]));
       return ids.flatMap((id) => (porId.has(id) ? [porId.get(id)!] : []));

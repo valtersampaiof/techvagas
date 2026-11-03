@@ -117,6 +117,8 @@ model Curso {
   descricao     String  @default("")
 
   habilidades   HabilidadeDoCurso[]
+
+  @@unique([instituicao, titulo])
 }
 
 model HabilidadeDoCurso {

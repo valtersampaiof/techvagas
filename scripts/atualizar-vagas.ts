@@ -1,8 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { criarClienteDoBanco } from "../src/lib/cliente-do-banco";
 import { PREFIXO_CARREIRA } from "../src/lib/rotulos";
 import { sincronizarVagas, type ResultadoDaFonte } from "../src/lib/vagas/sincronizar";
 
-const db = new PrismaClient();
+const db = criarClienteDoBanco();
 
 async function main() {
   console.log("Buscando vagas nas fontes...\n");
