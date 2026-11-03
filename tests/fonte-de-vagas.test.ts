@@ -69,6 +69,20 @@ describe("listar com filtro de regime", () => {
   });
 });
 
+describe("listar com filtro de vagas afirmativas", () => {
+  it("separa as afirmativas, por grupo ou de qualquer grupo", async () => {
+    await criar("Af PCD", "Brasil", "remoto", { afirmativa: ",pcd,", idExterno: "a1" });
+    await criar("Af Mulheres", "Brasil", "remoto", { afirmativa: ",mulheres,", idExterno: "a2" });
+    await criar("Af Duas", "Brasil", "remoto", { afirmativa: ",pcd,mulheres,", idExterno: "a3" });
+    await criar("Comum", "Brasil", "remoto", { idExterno: "a4" });
+    expect(await titulos({ afirmativa: "pcd" })).toEqual(["Af Duas", "Af PCD"]);
+    expect(await titulos({ afirmativa: "mulheres" })).toEqual(["Af Duas", "Af Mulheres"]);
+    expect(await titulos({ afirmativa: "qualquer" })).toEqual(["Af Duas", "Af Mulheres", "Af PCD"]);
+    expect(await titulos({ afirmativa: "negros" })).toEqual([]);
+    await db.vaga.deleteMany({ where: { idExterno: { in: ["a1", "a2", "a3", "a4"] } } });
+  });
+});
+
 describe("habilidadesMaisPedidas", () => {
   it("conta as habilidades pelas vagas que passam nos filtros e ordena da mais pedida para a menos", async () => {
     const sql = await db.habilidade.create({ data: { slug: "t-sql", nome: "SQL", area: "Dados" } });

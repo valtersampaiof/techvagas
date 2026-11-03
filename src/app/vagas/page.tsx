@@ -8,6 +8,7 @@ import { ehDaRegiao, interpretarLocal, nomeDoEstado } from "@/lib/localizacao";
 import { numeroDaPagina, paginar } from "@/lib/paginacao";
 import { ROTULO_MODALIDADE } from "@/lib/rotulos";
 import { ajustarRegime } from "@/lib/tipos-de-vaga";
+import { GRUPOS_AFIRMATIVOS, ROTULO_AFIRMATIVA, ehGrupoAfirmativo } from "@/lib/vagas/afirmativas";
 import { idsDasVagasSalvas } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
 import { CartaoVaga } from "@/components/CartaoVaga";
@@ -25,6 +26,7 @@ type Parametros = {
   uf?: string;
   cidade?: string;
   somenteRegiao?: string;
+  afirmativa?: string;
   publicada?: string;
   salario?: string;
   ordem?: string;
@@ -55,12 +57,14 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
   const contrato = regime.contrato || undefined;
   const ordem = filtros.ordem === "recentes" || filtros.ordem === "salario" ? filtros.ordem : "padrao";
 
+  const afirmativa = filtros.afirmativa === "qualquer" || ehGrupoAfirmativo(filtros.afirmativa) ? filtros.afirmativa : undefined;
   const vagas = await fonteDeVagas.listar({
     busca: filtros.busca?.trim() || undefined,
     tipo,
     contrato,
     modalidade: filtros.modalidade || undefined,
     area: filtros.area || undefined,
+    afirmativa,
     uf,
     cidade,
     somenteRegiao,
@@ -134,6 +138,7 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
     uf: filtros.uf,
     cidade: filtros.cidade,
     somenteRegiao: filtros.somenteRegiao,
+    afirmativa,
     publicada: filtros.publicada,
     salario: filtros.salario,
     ordem: filtros.ordem,
@@ -204,6 +209,19 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
               📍 Usar minha cidade ({usuario?.cidade})
             </Link>
           )}
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3 p-4">
+          <span className="legenda self-center">Diversidade</span>
+          <select name="afirmativa" defaultValue={afirmativa ?? ""} className={seletor} aria-label="Vagas afirmativas">
+            <option value="">Todas as vagas</option>
+            <option value="qualquer">Só vagas afirmativas</option>
+            {GRUPOS_AFIRMATIVOS.filter((g) => g !== "outra").map((g) => <option key={g} value={g}>{ROTULO_AFIRMATIVA[g]}</option>)}
+          </select>
+          <p className="basis-full text-xs text-slate-500">
+            Vagas que o anúncio diz serem exclusivas ou afirmativas para um grupo. Quando a empresa só diz que a vaga &quot;também&quot; aceita
+            o grupo, ela pode aparecer junto.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-end gap-3 p-4">

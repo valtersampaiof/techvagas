@@ -20,11 +20,21 @@ de quem procura com os requisitos de cada vaga e indica cursos gratuitos e pagos
   num quadro à parte, em vez de um bloco de texto corrido.
 - **Currículo em PDF:** o site lê o PDF, sugere as habilidades e a pessoa confere antes de salvar. O PDF não é guardado.
 - **Compatibilidade e cursos:** para cada vaga mostra o que a pessoa tem e o que falta, e sugere cursos para cada lacuna.
-  O catálogo tem 419 cursos para 46 habilidades, do nível iniciante ao avançado.
+  O catálogo tem 422 cursos para 46 habilidades, do nível iniciante ao avançado.
 - **Buscas exatas:** a busca vale por palavra inteira ("java" não traz "javascript"), ignora acentos e o filtro de
   habilidade só traz cursos que ensinam aquilo de verdade.
-- **Vagas salvas e alertas por e-mail:** a pessoa marca vagas com a estrela e recebe um aviso quando aparecem vagas novas
-  com os filtros que escolheu.
+- **Vagas salvas, candidaturas e alertas por e-mail:** a pessoa marca vagas com a estrela, acompanha cada candidatura (me
+  candidatei, entrevista, proposta...) com anotações, e recebe um aviso quando aparecem vagas novas com os filtros que escolheu.
+- **Habilidades mais pedidas (`/mercado`):** ranking do que mais aparece nos requisitos, por regime, nível e área, com a marca
+  do que a pessoa já tem e o caminho para os cursos.
+- **Trilhas de estudo (`/trilhas`) e cursos concluídos:** 8 carreiras com os cursos em ordem. Ao marcar um curso como concluído,
+  as habilidades dele entram no perfil e as vagas passam a combinar mais.
+- **Vagas afirmativas:** filtro por grupo (PCD, mulheres, pessoas negras, LGBTQIA+), só quando o anúncio diz que a vaga é
+  exclusiva ou afirmativa (declarações gerais de diversidade não contam).
+- **Conta segura:** "esqueci minha senha", confirmação de e-mail, bloqueio após senhas erradas, política de privacidade e
+  exclusão da própria conta.
+- **Pronto para a internet, de graça:** banco online (Turso), site na Vercel e atualização automática das vagas pelo GitHub
+  Actions. Passo a passo em [`docs/COLOCAR-NO-AR.md`](docs/COLOCAR-NO-AR.md).
 - **Testes automáticos:** mais de 400 testes (Vitest) cobrem a leitura das fontes, a classificação das vagas, os filtros,
   a compatibilidade e os alertas.
 
@@ -53,7 +63,9 @@ npm run vagas:atualizar     # (opcional) busca vagas reais nas fontes; veja a se
 npm run dev                 # http://localhost:3000
 ```
 
-Outros comandos: `npm test` (testes), `npm run lint`, `npm run build`, `npm run alertas:enviar` (veja "Alertas por e-mail").
+Outros comandos: `npm test` (testes), `npm run lint`, `npm run build`, `npm run alertas:enviar` (veja "Alertas por e-mail"),
+`npm run cursos:verificar-links` (confere se os links dos cursos ainda abrem) e `npm run banco:preparar` (prepara o banco
+online; veja `docs/COLOCAR-NO-AR.md`).
 
 **Depois de atualizar o código** (`git pull`), rode `npm install` e `npm run db:preparar` de novo: o banco ganhou colunas
 (contratação da vaga e dos alertas) e o catálogo ganhou habilidades e cursos. Sem isso, `npm run vagas:atualizar` avisa e
@@ -66,8 +78,9 @@ para, em vez de salvar vagas sem os requisitos novos. Os dados já gravados são
 | `/` | Apresentação |
 | `/vagas` | Lista com filtros (**nível**, **contratação CLT/PJ**, modalidade, área, **estado e cidade**, **data de publicação**, **salário/bolsa mínimo**), ordenação (compatibilidade, mais recentes, maior salário), % de compatibilidade (quando logado e com perfil) e paginação |
 | `/vagas/[id]` | Requisitos (✔ tem / ✘ falta) e cursos para cada lacuna. **Passe o mouse (ou toque) no nome de uma habilidade** para ver até 3 cursos gratuitos dela num mini quadro, sem sair da página |
+| `/trilhas`, `/mercado` | Trilhas de estudo por carreira e ranking das habilidades mais pedidas nas vagas |
 | `/cursos` | Catálogo com busca por texto e filtros (habilidade, preço, nível em que começa, **até onde leva**, idioma, duração, certificado), ordenação e paginação |
-| `/salvas` | Vagas que a pessoa marcou com a estrela (★). Se uma vaga salva sai da fonte, ela continua na lista, marcada como "possivelmente encerrada" |
+| `/salvas` | Minhas vagas: as marcadas com a estrela (★), com a etapa da candidatura e anotações. Se uma vaga salva sai da fonte, ela continua na lista, marcada como "possivelmente encerrada" |
 | `/alertas` | Alertas por e-mail: a pessoa escolhe estado, cidade, nível, contratação, área e salário mínimo e recebe um aviso quando aparecem vagas **novas** assim |
 | `/perfil` | Envio do currículo em PDF, revisão e edição das habilidades |
 | `/entrar`, `/cadastrar` | Conta (e-mail e senha) |
@@ -259,7 +272,7 @@ Cuidados que já estão no código:
 ## Atenção antes de publicar
 
 - As **vagas de exemplo são fictícias** (`src/lib/dados/vagas.ts`).
-- Em `src/lib/dados/cursos*.ts` (419 cursos, 46 habilidades), **gratuidade, preço, carga horária e certificado precisam
+- Em `src/lib/dados/cursos*.ts` (422 cursos, 46 habilidades), **gratuidade, preço, carga horária e certificado precisam
   ser conferidos** no site de cada instituição. Vários links apontam para a página geral do provedor porque o endereço
   de cada curso muda. Os links foram testados em 25/10/2026: dos 369 endereços diferentes, 330 responderam e os demais
   ou bloqueiam programas automáticos (Udemy, PMI, GitHub) ou não puderam ser abertos dali; os que deram erro 404 foram corrigidos.

@@ -72,6 +72,7 @@ export async function sincronizarVagas(db: PrismaClient, fontes: FonteExterna[] 
           modalidade: v.modalidade,
           tipo: v.tipo,
           niveisExtras: v.niveisExtras,
+          afirmativa: v.afirmativa,
           contrato: v.contrato,
           area: v.area,
           descricao: v.descricao,

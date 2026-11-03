@@ -3,6 +3,7 @@ import { extrairHabilidades, normalizar } from "../extrair-habilidades";
 import type { Nivel } from "../niveis";
 import { extrairSalarioDoTexto, type Salario } from "../salario";
 import type { Contrato, TipoDeVaga } from "../tipos-de-vaga";
+import { detectarAfirmativas } from "./afirmativas";
 import { organizarDescricao, textoSimples } from "./organizar";
 import { ehBancoDeTalentos, espacarFrases, truncar } from "./texto";
 import type { VagaExterna } from "./tipos";
@@ -13,6 +14,8 @@ export type VagaNormalizada = VagaExterna & {
   tipo: TipoDeVaga;
   /** Outros níveis que o título aceita (",senior,"), ou "". */
   niveisExtras: string;
+  /** Grupos que a vaga afirmativa prioriza (",pcd,mulheres,"), ou "". */
+  afirmativa: string;
   contrato: Contrato;
   /** Atividades da vaga em poucas linhas, para o cartão. */
   resumo: string;
@@ -333,6 +336,7 @@ export function normalizarVaga(v: VagaExterna, catalogo: HabilidadeBase[]): Vaga
     detalhes: JSON.stringify(organizada),
     tipo,
     niveisExtras: niveisExtrasDoTitulo(v.titulo, tipo),
+    afirmativa: detectarAfirmativas(v.titulo, v.descricao),
     contrato: detectarContrato(v, tipo),
     modalidade: detectarModalidade(v),
     area: escolherArea(requisitos.map((r) => r.slug), catalogo, v.titulo),

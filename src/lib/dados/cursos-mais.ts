@@ -601,4 +601,18 @@ export const CURSOS_MAIS: CursoBase[] = [
     gratuito: false, preco: "Mensalidade (varia por unidade)", cargaHoraria: 200, nivel: "iniciante", certificado: true,
     descricao: "Rede de escolas de inglês presente em vários estados, com cursos do básico ao avançado.",
     habilidades: [["ingles", "avancado"]] },
+
+  // ================= Material gratuito em português que faltava =================
+  { titulo: "Descomplicando o Docker", instituicao: "LINUXtips", link: "https://github.com/badtuxx/DescomplicandoDocker",
+    gratuito: true, preco: "Gratuito", cargaHoraria: 12, nivel: "iniciante", certificado: false,
+    descricao: "Material gratuito, em português, passo a passo: imagens, contêineres, volumes, redes e Docker Compose. Sem certificado.",
+    habilidades: [["docker", "intermediario"], ["linux", "iniciante"]] },
+  { titulo: "Descomplicando o Prometheus", instituicao: "LINUXtips", link: "https://github.com/badtuxx/DescomplicandoPrometheus",
+    gratuito: true, preco: "Gratuito", cargaHoraria: 12, nivel: "iniciante", certificado: false,
+    descricao: "Material gratuito, em português, sobre monitoramento com Prometheus: métricas, consultas, alertas e Grafana. Sem certificado.",
+    habilidades: [["monitoramento", "intermediario"], ["linux", "iniciante"]] },
+  { titulo: "Aprenda Go com Testes", instituicao: "Tradução da comunidade (Learn Go with Tests)", link: "https://larien.gitbook.io/aprenda-go-com-testes/",
+    gratuito: true, preco: "Gratuito", cargaHoraria: 20, nivel: "iniciante", certificado: false,
+    descricao: "Tradução, em português, do livro Learn Go with Tests: aprende-se Go escrevendo testes. Sem certificado.",
+    habilidades: [["golang", "intermediario"], ["testes", "iniciante"]] },
 ];

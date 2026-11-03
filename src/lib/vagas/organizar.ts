@@ -1,5 +1,5 @@
 import { normalizar } from "../extrair-habilidades";
-import { espacarFrases } from "./texto";
+import { espacarFrases, separarColados } from "./texto";
 
 /**
  * Organiza o texto de um anúncio em seções legíveis (sobre a vaga, o que fazer, requisitos, diferenciais, benefícios...)
@@ -178,6 +178,9 @@ const limparParagrafo = (s: string) => espacarFrases(s.replace(/^[;.\s•-]+/, "
 /** "Jornada de Trabalho:06h diárias" → "Jornada de Trabalho: 06h diárias". */
 const espacarRotulo = (s: string) => s.replace(/^([A-ZÀ-Ú][^:]{2,40}:)(?=\S)/, "$1 ");
 
+/** "Java (Spring Boot)APIs RESTIntegrações" vira três linhas (itens), sem mexer em "JavaScript" e afins. */
+const dividirItensColados = (linha: string) => separarColados(linha, "\n").split("\n");
+
 type Construcao = { id: IdDaSecao; titulo: string; linhas: string[] };
 
 function dividirEmSecoes(linhas: string[]): Construcao[] {
@@ -229,9 +232,12 @@ function montar(c: Construcao): Secao {
   // Em benefícios e informações adicionais os itens costumam vir colados ("Seguro de VidaApoio ao falecimento"). Aqui não há
   // nomes como "JavaScript", então dá para separar palavra Capitalizada colada em outra.
   const separarColados = c.id === "beneficios" || c.id === "outras";
+  // Nas listas de requisitos e de atividades há nomes como "JavaScript", então só se separam os casos seguros.
   const linhas = separarColados
     ? c.linhas.flatMap((l) => l.replace(/([A-ZÀ-Ú]?[a-zà-ú]{3,})(?=[A-ZÀ-Ú][a-zà-ú]{2,})/g, "$1\n").split("\n"))
-    : c.linhas;
+    : lista
+      ? c.linhas.flatMap((l) => dividirItensColados(l))
+      : c.linhas;
 
   for (const linha of linhas) {
     if (!linha) continue;

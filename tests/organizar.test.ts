@@ -201,3 +201,26 @@ describe("lerDescricaoOrganizada", () => {
     for (const ruim of ["", "não é json", "{}", '{"secoes":"x","fatos":{}}', "null", undefined, null]) expect(lerDescricaoOrganizada(ruim as string)).toBeNull();
   });
 });
+
+describe("texto com palavras coladas", () => {
+  it("separa o que está colado, sem estragar nomes de tecnologias", async () => {
+    const { separarColados } = await import("@/lib/vagas/texto");
+    expect(separarColados("Responsabilidades e atribuiçõesDesenvolver aplicações")).toBe("Responsabilidades e atribuições Desenvolver aplicações");
+    expect(separarColados("Java (Spring Boot)APIs RESTIntegrações entre sistemas")).toBe("Java (Spring Boot) APIs REST Integrações entre sistemas");
+    expect(separarColados("RequisitosFormação superior")).toBe("Requisitos Formação superior");
+    expect(separarColados("HYBRIDResponsabilidades")).toBe("HYBRID Responsabilidades");
+    expect(separarColados("A", "\n")).toBe("A");
+    for (const nome of ["JavaScript", "TypeScript", "PostgreSQL", "GitHub", "DevOps", "iFood", "PayPal", "OpenShift", "RESTful", "NoSQL", "ASP.NET", "Node.js", "C#", "SQLAlchemy"]) {
+      expect(separarColados(`Experiência com ${nome} e Java`), nome).toBe(`Experiência com ${nome} e Java`);
+    }
+  });
+
+  it("itens colados numa lista de requisitos viram itens separados", () => {
+    const r = organizarDescricao("Requisitos e qualificações\nJava (Spring Boot)APIs RESTIntegrações entre sistemasVersionamento Git/GitHub");
+    const requisitos = r.secoes.find((s) => s.id === "requisitos")!;
+    expect(requisitos.itens.length).toBeGreaterThanOrEqual(3);
+    expect(requisitos.itens.join(" | ")).toContain("APIs REST");
+    expect(requisitos.itens.every((i) => !/RESTIntegra/.test(i))).toBe(true);
+    expect(requisitos.itens.join(" ")).toContain("Git/GitHub");
+  });
+});

@@ -50,7 +50,41 @@ export function markdownParaTexto(md: string): string {
  * nunca antes de procurar habilidades.
  */
 export function espacarFrases(texto: string): string {
-  return texto.replace(/([a-zà-ú\)])([.!?;:])([A-ZÀ-Ú][a-zà-ú])/g, "$1$2 $3");
+  return separarColados(texto.replace(/([a-zà-ú\)])([.!?;:])([A-ZÀ-Ú][a-zà-ú])/g, "$1$2 $3"));
+}
+
+/** Palavras que abrem um bloco do anúncio: se uma delas aparece colada na seguinte ("RequisitosFormação"), é fim de bloco. */
+const ABRE_BLOCO =
+  /^(Responsabilidades|Atribui[çc][õo]es|Atividades|Requisitos|Qualifica[çc][õo]es|Benef[íi]cios|Diferenciais|Habilidades|Compet[êe]ncias|Experi[êe]ncia|Forma[çc][ãa]o|Conhecimentos?|Desej[áa]ve(l|is)|Obrigat[óo]rios?|Informa[çc][õo]es|Descri[çc][ãa]o|Jornada|Local|Modalidade|Sal[áa]rio|Perfil|Vaga|Escolaridade|Idiomas?|Certifica[çc][õo]es|Contrata[çc][ãa]o|Regime)$/;
+
+/** Nomes com letra maiúscula no meio: não são palavras coladas. */
+const NOMES_COM_MAIUSCULA =
+  /^(javaScript|typeScript|reactNative|nodeJs|iFood|jQuery|eBay|macOS|iOS|pyTorch|SQLAlchemy|JavaScript|TypeScript|PowerShell|PowerPoint|SharePoint|OpenShift|WordPress|FullStack|DataBricks|WebSphere|PostgreSQL|RESTful|GraphQL|ServiceNow|SonarQube|LinkedIn|SpringBoot)$/;
+
+/**
+ * Textos que as fontes entregam com os itens colados ("APIs RESTIntegrações entre sistemas", "...Spring Boot)APIs REST")
+ * ganham um separador onde uma palavra começa colada na anterior. Só separa os casos seguros (ver abaixo) e deixa
+ * como estão nomes como "JavaScript", "iFood" ou "PostgreSQL". Use apenas no texto EXIBIDO, nunca antes de procurar habilidades.
+ */
+export function separarColados(texto: string, separador = " "): string {
+  return texto
+    .replace(/\)(?=[A-ZÀ-Ú])/g, `)${separador}`)
+    .replace(/[A-Za-zÀ-ú]+/g, (palavra) => separarPalavra(palavra, separador));
+}
+
+function separarPalavra(palavra: string, separador: string): string {
+  if (NOMES_COM_MAIUSCULA.test(palavra)) return palavra;
+  // "atribuiçõesDesenvolver": palavra em minúsculas (4 letras ou mais) seguida de outra Capitalizada.
+  if (/^[a-zà-ú]{4,}[A-ZÀ-Ú][a-zà-ú]{3,}/.test(palavra)) {
+    return palavra.replace(/(?<=[a-zà-ú]{4})(?=[A-ZÀ-Ú][a-zà-ú]{3,})/g, separador);
+  }
+  // "RequisitosFormação": palavra que abre um bloco, colada na seguinte.
+  const aberta = palavra.match(/^([A-ZÀ-Ú][a-zà-ú]+)(?=[A-ZÀ-Ú][a-zà-ú]{3,})/);
+  if (aberta && ABRE_BLOCO.test(aberta[1])) return aberta[1] + separador + separarPalavra(palavra.slice(aberta[1].length), separador);
+  // "RESTIntegrações", "HYBRIDResponsabilidades": SIGLA em maiúsculas (3 letras ou mais) colada em palavra Capitalizada.
+  const sigla = palavra.match(/^([A-ZÀ-Ú]{3,})([A-ZÀ-Ú][a-zà-ú]{4,}.*)$/);
+  if (sigla) return sigla[1] + separador + separarPalavra(sigla[2], separador);
+  return palavra;
 }
 
 export function truncar(texto: string, limite: number): string {

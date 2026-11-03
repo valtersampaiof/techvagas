@@ -73,7 +73,7 @@ As principais "planilhas" (tabelas) do banco:
 | **Vaga** | título, empresa, cidade, nível, regime (CLT/PJ/estágio), salário, texto, link original |
 | **Habilidade** | cada coisa que se pode saber: Python, SQL, Redes, Segurança... (46 no total) |
 | **RequisitoDaVaga** | liga uma vaga a uma habilidade: "esta vaga pede SQL, nível básico" |
-| **Curso** | os 419 cursos, com preço, carga horária, se tem certificado |
+| **Curso** | os 422 cursos, com preço, carga horária, se tem certificado |
 | **HabilidadeDoCurso** | liga um curso a uma habilidade: "este curso ensina Docker até o nível intermediário" |
 | **Usuario** e suas habilidades | as contas e o que cada pessoa sabe |
 | **VagaSalva** | as vagas marcadas com a estrela |
@@ -129,7 +129,7 @@ Criamos uma lista de **habilidades** (Python, SQL, Docker, Segurança da Informa
 que aparecem nos anúncios: "JS" e "JavaScript" são a mesma coisa; "k8s" é Kubernetes. Sem isso, o site não reconheceria que
 uma vaga que diz "k8s" pede Kubernetes.
 
-Depois montamos o **catálogo de cursos**: hoje são 419, de plataformas conhecidas (Alura, Curso em Vídeo, Fundação Bradesco,
+Depois montamos o **catálogo de cursos**: hoje são 422, de plataformas conhecidas (Alura, Curso em Vídeo, Fundação Bradesco,
 Microsoft Learn, Coursera, freeCodeCamp e outras). Cada curso diz **quais habilidades ensina e até que nível**: iniciante,
 intermediário ou avançado.
 
@@ -208,6 +208,25 @@ conforme o regime**: estágio não tem nível, PJ não tem trainee.
 ### Etapa 15 — Testar e publicar o código
 A cada mudança: rodamos os testes, o revisor de estilo e conferimos a tela num navegador de verdade (de computador e de celular).
 Só então a alteração foi guardada (commit) e enviada ao GitHub.
+
+### Etapa 16 — Colocar o site na internet, de graça
+Até aqui o site só rodava no computador. Preparamos três peças gratuitas: um **banco de dados online** (Turso, o mesmo tipo de
+banco, só que num servidor), a **Vercel** (que mostra o site) e o **GitHub Actions** (que busca vagas novas sozinho a cada 6 horas e
+manda os alertas). O guia passo a passo está em `docs/COLOCAR-NO-AR.md`.
+
+### Etapa 17 — Segurança da conta
+"Esqueci minha senha" (um link por e-mail que vale uma vez só), confirmação de e-mail, bloqueio por 15 minutos depois de 5 senhas
+erradas, política de privacidade e botão para excluir a própria conta.
+
+### Etapa 18 — Ajudar a decidir o que estudar
+- **Habilidades mais pedidas:** conta, nas milhares de vagas, quais habilidades mais aparecem, por regime, nível e área.
+- **Trilhas de estudo:** 8 carreiras, cada uma com os cursos na ordem. Ao marcar um curso como concluído, as habilidades dele
+  entram no seu perfil, e as vagas passam a combinar mais com você.
+- **Acompanhar candidaturas:** cada vaga salva ganha uma etapa (me candidatei, entrevista, proposta...) e anotações.
+
+### Etapa 19 — Acabamentos
+Filtro de vagas afirmativas (só quando o anúncio diz que a vaga é exclusiva ou afirmativa), separação de palavras que as fontes
+entregam coladas ("APIs RESTIntegrações"), mais cursos gratuitos em português e um comando que confere os links dos cursos.
 
 ---
 

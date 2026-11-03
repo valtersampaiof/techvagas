@@ -17,6 +17,8 @@ export type FiltrosDeVagas = {
   uf?: string;
   /** Parte do nome da cidade; acentos e maiúsculas não importam. */
   cidade?: string;
+  /** "qualquer" (toda vaga afirmativa) ou um grupo: "pcd", "mulheres", "negros", "lgbt". */
+  afirmativa?: string;
   /** Por padrão, ao filtrar por estado/cidade as vagas remotas continuam aparecendo. */
   somenteRegiao?: boolean;
   /** Salário ou bolsa mensal mínimo. Vagas sem valor informado ficam de fora. */
@@ -187,7 +189,7 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
   }
 
   return {
-    async listar({ busca, tipo, contrato, modalidade, area, uf, cidade, somenteRegiao, salarioMinimo, publicadaHaDias, descobertasDepoisDe, agora = new Date() }) {
+    async listar({ busca, tipo, contrato, modalidade, area, afirmativa, uf, cidade, somenteRegiao, salarioMinimo, publicadaHaDias, descobertasDepoisDe, agora = new Date() }) {
       const chaveDaCidade = cidade ? normalizar(cidade).trim() : "";
       const regiao = {
         ...(uf ? { uf } : {}),
@@ -201,6 +203,7 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
           AND: [
             filtroDaOrigem,
             ...condicoesBasicas({ tipo, contrato, modalidade, area }),
+            afirmativa ? (afirmativa === "qualquer" ? { afirmativa: { not: "" } } : { afirmativa: { contains: `,${afirmativa},` } }) : {},
             // Com estado/cidade, as vagas remotas também servem (a menos que a pessoa peça só a região).
             temRegiao ? (somenteRegiao ? regiao : { OR: [regiao, { modalidade: "remoto" }] }) : {},
             // Vale o teto da faixa ("R$ 1.500 a R$ 1.900" serve para quem quer 1.800+); "a partir de" vale o piso.
