@@ -34,6 +34,7 @@ export async function Cabecalho() {
         <nav aria-label="Principal" className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto px-1 sm:order-none sm:mx-0 sm:w-auto sm:overflow-visible sm:px-0">
           <LinkDoMenu href="/vagas">Vagas</LinkDoMenu>
           <LinkDoMenu href="/cursos">Cursos</LinkDoMenu>
+          <LinkDoMenu href="/trilhas">Trilhas</LinkDoMenu>
           <LinkDoMenu href="/mercado">Mercado</LinkDoMenu>
           <LinkDoMenu href="/salvas">
             Salvas

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { listarCursosCandidatos } from "@/lib/cursos";
+import { idsDosCursosConcluidos } from "@/lib/concluidos";
 import { db } from "@/lib/db";
+import { usuarioAtual } from "@/lib/sessao";
 import { DURACOES, ORDENS, filtrarCursos, ordenarCursos, type FiltrosDeCursos } from "@/lib/filtrar-cursos";
 import { NIVEIS, ROTULO_NIVEL } from "@/lib/niveis";
 import { numeroDaPagina, paginar } from "@/lib/paginacao";
@@ -17,6 +19,8 @@ const rotulo = "legenda";
 
 export default async function PaginaDeCursos({ searchParams }: { searchParams: Promise<Parametros> }) {
   const { pagina: paginaTexto, ...filtros } = await searchParams;
+  const usuario = await usuarioAtual();
+  const concluidos = usuario ? await idsDosCursosConcluidos(usuario.id) : null;
   const [todos, habilidades] = await Promise.all([
     listarCursosCandidatos(),
     db.habilidade.findMany({ orderBy: [{ area: "asc" }, { nome: "asc" }], select: { slug: true, nome: true } }),
@@ -115,7 +119,7 @@ export default async function PaginaDeCursos({ searchParams }: { searchParams: P
       </p>
 
       <div className="mt-3 grid gap-4 md:grid-cols-2">
-        {pagina.itens.map((c) => <CartaoCurso key={c.id} curso={c} />)}
+        {pagina.itens.map((c) => <CartaoCurso key={c.id} curso={c} concluido={concluidos ? concluidos.has(c.id) : undefined} />)}
       </div>
       {pagina.total === 0 && (
         <p className="mt-8 text-center text-slate-500">

@@ -38,6 +38,7 @@ model Usuario {
   vagasSalvas   VagaSalva[]
   alertas       Alerta[]
   tokens        TokenDeConta[]
+  cursosConcluidos CursoConcluido[]
 }
 
 // Links de uso único enviados por e-mail ("confirmar e-mail" e "redefinir senha"). Só o resumo (hash) do código fica no banco.
@@ -144,8 +145,21 @@ model Curso {
   descricao     String  @default("")
 
   habilidades   HabilidadeDoCurso[]
+  concluidoPor  CursoConcluido[]
 
   @@unique([instituicao, titulo])
+}
+
+// Cursos que a pessoa marcou como concluídos (e que já passaram suas habilidades para o perfil).
+model CursoConcluido {
+  usuarioId   Int
+  cursoId     Int
+  concluidoEm DateTime @default(now())
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  curso       Curso    @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, cursoId])
 }
 
 model HabilidadeDoCurso {

@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 const linksDoRodape = [
   { href: "/vagas", rotulo: "Vagas" },
   { href: "/cursos", rotulo: "Cursos" },
+  { href: "/trilhas", rotulo: "Trilhas de estudo" },
   { href: "/mercado", rotulo: "Habilidades mais pedidas" },
   { href: "/alertas", rotulo: "Alertas por e-mail" },
   { href: "/perfil", rotulo: "Meu perfil" },

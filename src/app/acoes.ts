@@ -12,6 +12,7 @@ import { emailValidado } from "@/lib/seguranca";
 import { criarSessao, encerrarSessao, usuarioAtual } from "@/lib/sessao";
 import { ehNivel } from "@/lib/niveis";
 import { LIMITE_DA_ANOTACAO, ehEtapa } from "@/lib/candidaturas";
+import { habilidadesGanhasComCurso } from "@/lib/conclusao";
 import { MAX_ALERTAS_POR_PESSOA, gerarToken, nomeDoAlerta, temAlgumFiltro } from "@/lib/alertas";
 import { normalizar } from "@/lib/extrair-habilidades";
 import { SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
@@ -137,6 +138,50 @@ export async function alternarVagaSalva(vagaId: number): Promise<ResultadoDeSalv
 
   revalidatePath("/salvas");
   return { salva: !jaSalva };
+}
+
+export type ResultadoDeConclusao =
+  | { concluido: boolean; ganhas: { nome: string; nivel: string; antes: string | null }[] }
+  | { erro: string };
+
+/**
+ * Marca o curso como concluído, ou tira a marca. Ao concluir, as habilidades que o curso ensina de verdade entram no perfil
+ * (ou sobem de nível). Tirar a marca não mexe no perfil: a pessoa pode ter aprendido de qualquer jeito, e ela edita o que quiser.
+ */
+export async function alternarCursoConcluido(cursoId: number): Promise<ResultadoDeConclusao> {
+  const usuario = await usuarioAtual();
+  if (!usuario) return { erro: "Entre na sua conta para marcar cursos como concluídos." };
+  if (!Number.isInteger(cursoId) || cursoId <= 0) return { erro: "Curso não encontrado." };
+
+  const chave = { usuarioId_cursoId: { usuarioId: usuario.id, cursoId } };
+  if (await db.cursoConcluido.findUnique({ where: chave })) {
+    await db.cursoConcluido.delete({ where: chave });
+    revalidatePath("/trilhas", "layout");
+    return { concluido: false, ganhas: [] };
+  }
+
+  const curso = await db.curso.findUnique({ where: { id: cursoId }, include: { habilidades: { include: { habilidade: true } } } });
+  if (!curso) return { erro: "Curso não encontrado." };
+
+  const perfil = new Map(usuario.habilidades.map((h) => [h.habilidade.slug, h.nivel]));
+  const ganhas = habilidadesGanhasComCurso(
+    { habilidades: curso.habilidades.map((h) => ({ slug: h.habilidade.slug, nivelEnsinado: h.nivelEnsinado, principal: h.principal })) },
+    perfil,
+  );
+  const idPorSlug = new Map(curso.habilidades.map((h) => [h.habilidade.slug, h.habilidade]));
+
+  await db.$transaction([
+    db.cursoConcluido.create({ data: { usuarioId: usuario.id, cursoId } }),
+    ...ganhas.map((g) =>
+      db.habilidadeDoUsuario.upsert({
+        where: { usuarioId_habilidadeId: { usuarioId: usuario.id, habilidadeId: idPorSlug.get(g.slug)!.id } },
+        update: { nivel: g.nivel },
+        create: { usuarioId: usuario.id, habilidadeId: idPorSlug.get(g.slug)!.id, nivel: g.nivel },
+      }),
+    ),
+  ]);
+  revalidatePath("/", "layout");
+  return { concluido: true, ganhas: ganhas.map((g) => ({ nome: idPorSlug.get(g.slug)!.nome, nivel: g.nivel, antes: g.antes })) };
 }
 
 export type ResultadoDaEtapa = { ok: true; etapa: string } | { erro: string };

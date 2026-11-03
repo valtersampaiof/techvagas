@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { calcularCompatibilidade, melhoresGratuitos, recomendarCursos, type Lacuna } from "@/lib/compatibilidade";
+import { idsDosCursosConcluidos } from "@/lib/concluidos";
 import { listarCursosCandidatos } from "@/lib/cursos";
 import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
@@ -42,6 +43,7 @@ export default async function PaginaDaVaga({ params }: Props) {
   const logado = usuario !== null;
   const temPerfil = habilidades.length > 0;
 
+  const concluidos = usuario ? await idsDosCursosConcluidos(usuario.id) : null;
   const acompanhamento = usuario ? await acompanhamentoDaVaga(usuario.id, vaga.id) : null;
   const salva = acompanhamento !== null;
   const semRequisitos = vaga.requisitos.length === 0;
@@ -239,8 +241,8 @@ export default async function PaginaDaVaga({ params }: Props) {
                 </h3>
                 {melhorGratuito || melhorPago ? (
                   <div className="mt-2 grid gap-3 md:grid-cols-2">
-                    {melhorGratuito && <CartaoCurso curso={melhorGratuito} destaque="Opção gratuita" />}
-                    {melhorPago && <CartaoCurso curso={melhorPago} destaque="Opção paga" />}
+                    {melhorGratuito && <CartaoCurso curso={melhorGratuito} destaque="Opção gratuita" concluido={concluidos?.has(melhorGratuito.id)} />}
+                    {melhorPago && <CartaoCurso curso={melhorPago} destaque="Opção paga" concluido={concluidos?.has(melhorPago.id)} />}
                   </div>
                 ) : (
                   <p className="mt-2 text-sm text-slate-500">Ainda não temos curso para este nível. Veja o <Link href="/cursos" className="underline">catálogo</Link>.</p>

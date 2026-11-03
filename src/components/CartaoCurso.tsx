@@ -1,8 +1,16 @@
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
 import type { CursoCandidato } from "@/lib/compatibilidade";
+import { BotaoConcluido } from "./BotaoConcluido";
 import { Etiqueta } from "./Etiqueta";
 
-export function CartaoCurso({ curso, destaque }: { curso: CursoCandidato; destaque?: string }) {
+type Props = {
+  curso: CursoCandidato;
+  destaque?: string;
+  /** Só quando há alguém logado: mostra o botão "marcar como concluído". undefined = sem botão. */
+  concluido?: boolean;
+};
+
+export function CartaoCurso({ curso, destaque, concluido }: Props) {
   return (
     <article
       className="cartao relative flex h-full flex-col overflow-hidden p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-900/10"
@@ -30,14 +38,17 @@ export function CartaoCurso({ curso, destaque }: { curso: CursoCandidato; destaq
         <li><Etiqueta variante={curso.certificado ? "salario" : "neutra"}>{curso.certificado ? "🎓 Com certificado" : "Sem certificado"}</Etiqueta></li>
       </ul>
       <p className="mt-2 text-xs text-slate-500">{curso.preco}</p>
-      <a
-        href={curso.link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-auto inline-flex items-center gap-1 pt-3 text-sm font-semibold text-indigo-700 hover:text-indigo-900"
-      >
-        Ver o curso <span aria-hidden="true">↗</span>
-      </a>
+      <div className="mt-auto flex flex-wrap items-start justify-between gap-3 pt-3">
+        <a
+          href={curso.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 py-1.5 text-sm font-semibold text-indigo-700 hover:text-indigo-900"
+        >
+          Ver o curso <span aria-hidden="true">↗</span>
+        </a>
+        {concluido !== undefined && <BotaoConcluido cursoId={curso.id} concluidoInicial={concluido} />}
+      </div>
     </article>
   );
 }
