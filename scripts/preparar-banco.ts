@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { createClient } from "@libsql/client";
+import { createClient as criarClienteLocal } from "@libsql/client";
+import { createClient as criarClienteWeb } from "@libsql/client/web";
 import { planejarMudancas, type TabelasExistentes } from "../src/lib/preparar-banco";
 
 /**
@@ -16,7 +17,9 @@ async function main() {
     stdio: ["ignore", "pipe", "inherit"],
   });
 
-  const cliente = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN?.trim() || undefined });
+  // Para o Turso usa o MESMO caminho do site (HTTP, o cliente "web"); só arquivo local (testes) usa o cliente comum.
+  const config = { url, authToken: process.env.TURSO_AUTH_TOKEN?.trim() || undefined };
+  const cliente = url.startsWith("file:") ? criarClienteLocal(config) : criarClienteWeb(config);
   try {
     const tabelas = (await cliente.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")).rows.map((r) => String(r.name));
     const existentes: TabelasExistentes = new Map();

@@ -3,9 +3,11 @@
 Este guia leva o site do seu computador para a internet, **sem pagar nada e sem cartão de crédito** (confira na hora do
 cadastro, pois os serviços podem mudar as regras). Você não precisa escrever código: só criar três contas e copiar alguns textos.
 
-> **Aviso importante:** o ambiente em que o site foi construído não consegue abrir os sites da Vercel e do Turso. Por isso
-> estes passos foram escritos com base no que esses serviços costumam mostrar, e **os nomes dos botões podem estar um pouco
-> diferentes** quando você chegar lá. O raciocínio é o mesmo: se algum nome mudou, procure o parecido.
+> **O que foi conferido e o que não foi:** em 03/11/2026 conferi nas páginas oficiais do Turso e da Vercel os limites do plano
+> gratuito e os comandos usados aqui. Também testei, no computador, o caminho completo que o site usa na internet (preparar o
+> banco, carregar os cursos, buscar vagas, consultar, transações e o token de acesso) contra um servidor de teste que fala o mesmo
+> protocolo do Turso. O que **não** foi possível testar é o seu banco real e a sua conta na Vercel, porque isso exige contas suas.
+> Os **nomes dos botões** dos sites podem ser um pouco diferentes: se algum mudou, procure o parecido.
 
 ## Como as peças se encaixam
 
@@ -23,14 +25,21 @@ acordado: esse é o atualizador.
 
 ## Passo 1. Criar o banco de dados (Turso)
 
-1. Entre em **turso.tech** e crie uma conta (pode ser com o seu GitHub).
-2. Crie um banco de dados novo. Nome sugerido: `techvagas`.
+1. Entre em **turso.tech** e crie uma conta (pode ser com o seu GitHub). O plano gratuito não pede cartão de crédito.
+2. Crie um banco de dados novo, com o nome `techvagas`.
+   - **Atenção ao tipo:** o Turso hoje tem dois tipos de banco, o novo ("Turso") e o **libSQL**. O TechVagas usa o **libSQL**.
+     Se aparecer uma escolha de tipo, escolha **libSQL**. Pelo comando `turso db create techvagas`, o padrão já é libSQL
+     (o tipo novo só nasce com a opção `--tursodb`).
    - Se o Turso perguntar a **região**, escolha a mais perto do Brasil que aparecer.
-3. Abra o banco que você criou e procure:
-   - o **endereço do banco** (começa com `libsql://`). Copie e guarde: é o **`TURSO_DATABASE_URL`**;
-   - um botão para **criar um token** (uma "chave de acesso"). Crie e copie: é o **`TURSO_AUTH_TOKEN`**. Ele só aparece uma vez.
+3. Pegue duas informações do banco:
+   - o **endereço** (começa com `libsql://`): é o **`TURSO_DATABASE_URL`**;
+   - um **token** (chave de acesso): é o **`TURSO_AUTH_TOKEN`**. Ele só aparece uma vez, então copie na hora.
 
-Guarde esses dois textos num bloco de notas por enquanto. **Nunca os coloque em lugar público**: quem tiver o token mexe no seu banco.
+   No painel do site (turso.tech/app) ficam nas telas do banco. Se preferir o terminal, os comandos (conferidos na documentação
+   do Turso) são `turso db show techvagas --url` para o endereço e `turso db tokens create techvagas` para o token.
+
+Guarde esses dois textos num bloco de notas por enquanto. **Nunca os coloque em lugar público** (nem em conversas): quem tiver
+o token mexe no seu banco.
 
 ## Passo 2. Dar os segredos ao GitHub (para o atualizador)
 
@@ -109,8 +118,17 @@ alerta e de senha não são enviados.
 | O login não funciona | Falta `SEGREDO_SESSAO` na Vercel |
 | As páginas demoram para abrir | O banco e a Vercel estão em regiões distantes. Na Vercel, em **Settings → Functions**, escolha a região mais perto do banco |
 
-## Limites do plano gratuito
+## Limites do plano gratuito (conferidos em 03/11/2026)
 
-Os serviços gratuitos têm limites de uso (visitas, leituras do banco, minutos de execução) que mudam com o tempo. Para um
-projeto de portfólio costumam sobrar, mas **confira as regras atuais** nas páginas de preços da Vercel, do Turso e do GitHub.
-A Vercel gratuita, em especial, é para uso **não comercial**.
+- **Turso (plano Free):** 100 bancos, 5 GB de espaço, 500 milhões de linhas lidas por mês e 10 milhões de linhas gravadas por mês,
+  sem cartão de crédito.
+- **Vercel (plano Hobby):** gratuito, mas **só para uso pessoal e não comercial**. Funções de até 5 minutos por chamada.
+- **GitHub Actions:** gratuito em repositório público.
+
+**Uma conta de padeiro para o banco:** cada abertura da lista de vagas lê, no total, cerca de 10 a 12 mil linhas do banco. Com
+500 milhões por mês, isso dá algo como 40 mil listas abertas por mês, o suficiente para um portfólio. A atualização das vagas
+grava algumas dezenas de milhares de linhas por vez; a cada 6 horas fica bem abaixo das 10 milhões por mês. Se um dia chegar perto
+do limite, a saída mais simples é atualizar a cada 12 horas (arquivo `.github/workflows/atualizar-vagas.yml`).
+
+Esses números mudam com o tempo: confira as páginas de preços antes de contar com eles. Na página de preços do Turso há um aviso de que
+a empresa está se juntando à Supabase; vale acompanhar se algo mudar no plano gratuito.
