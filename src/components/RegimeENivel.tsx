@@ -39,7 +39,7 @@ export function RegimeENivel({ contratoInicial, tipoInicial, classeDoSeletor, co
 
   return (
     <>
-      <label>
+      <label className="w-full sm:w-auto">
         {titulo("Regime de contratação")}
         <select
           name="contrato"
@@ -55,7 +55,7 @@ export function RegimeENivel({ contratoInicial, tipoInicial, classeDoSeletor, co
       {contrato === "estagio" ? (
         <p className="self-center text-sm text-slate-600">Estágio não tem nível</p>
       ) : (
-        <label>
+        <label className="w-full sm:w-auto">
           {titulo("Nível")}
           <select name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value)} className={classeDoSeletor} aria-label="Nível da vaga">
             <option value="">Todos os níveis</option>

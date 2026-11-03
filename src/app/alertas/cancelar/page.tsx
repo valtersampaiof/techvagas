@@ -19,7 +19,7 @@ export default async function PaginaDeCancelamento({ searchParams }: { searchPar
       <div className="mx-auto max-w-md text-center">
         <h1 className="text-2xl font-bold">Alerta cancelado</h1>
         <p className="mt-3 text-slate-600">Pronto: você não receberá mais e-mails desse alerta.</p>
-        <Link href="/vagas" className="mt-5 inline-block rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Ver vagas</Link>
+        <Link href="/vagas" className="mt-5 btn-primario">Ver vagas</Link>
       </div>
     );
   }

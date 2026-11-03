@@ -21,11 +21,11 @@ export default async function PaginaDeAlertas({ searchParams }: { searchParams: 
   if (!usuario) {
     return (
       <div className="mx-auto max-w-md text-center">
-        <h1 className="text-2xl font-bold">Alertas por e-mail</h1>
+        <h1 className="titulo-de-pagina">Alertas por e-mail</h1>
         <p className="mt-3 text-slate-600">Entre na sua conta para receber aviso de vagas novas na sua cidade.</p>
         <div className="mt-5 flex justify-center gap-3">
           <Link href="/entrar" className="rounded-md border border-slate-300 px-4 py-2 hover:bg-slate-50">Entrar</Link>
-          <Link href="/cadastrar" className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700">Criar conta</Link>
+          <Link href="/cadastrar" className="btn-primario">Criar conta</Link>
         </div>
       </div>
     );
@@ -49,14 +49,14 @@ export default async function PaginaDeAlertas({ searchParams }: { searchParams: 
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Alertas por e-mail</h1>
+      <h1 className="titulo-de-pagina">Alertas por e-mail</h1>
       <p className="mt-1 text-sm text-slate-600">
         Receba um e-mail em <strong>{usuario.email}</strong> quando o site achar vagas <strong>novas</strong> que combinam com o que
         você procura. Você pode ter até {MAX_ALERTAS_POR_PESSOA} alertas e cancelar quando quiser (cada e-mail traz o link para isso).
       </p>
 
       {!emailConfigurado() && (
-        <p className="mt-4 rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="mt-4 rounded-xl ring-1 ring-inset ring-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <strong>Atenção:</strong> este servidor ainda não tem o envio de e-mails configurado. Seus alertas ficam guardados, mas
           nenhum e-mail é enviado até quem administra o site configurar o SMTP (veja o README).
         </p>
@@ -75,7 +75,7 @@ export default async function PaginaDeAlertas({ searchParams }: { searchParams: 
           {alertas.map((a) => {
             const consulta = parametrosDaLista(a);
             return (
-              <li key={a.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <li key={a.id} className="cartao p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-slate-900">

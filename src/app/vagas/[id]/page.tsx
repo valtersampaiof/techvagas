@@ -9,6 +9,8 @@ import { formatarPublicacao, formatarSalario } from "@/lib/formatar";
 import { ROTULO_CONTRATO, ROTULO_MODALIDADE, ROTULO_TIPO, rotuloDaOrigem, rotuloDoLocal } from "@/lib/rotulos";
 import { idsDasVagasSalvas } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
+import { AvatarDaEmpresa } from "@/components/AvatarDaEmpresa";
+import { Etiqueta } from "@/components/Etiqueta";
 import { BotaoSalvar } from "@/components/BotaoSalvar";
 import { CartaoCurso } from "@/components/CartaoCurso";
 import { DescricaoDaVaga } from "@/components/DescricaoDaVaga";
@@ -67,13 +69,16 @@ export default async function PaginaDaVaga({ params }: Props) {
 
   return (
     <div className="space-y-8">
-      <Link href="/vagas" className="text-sm text-indigo-700 hover:underline">← Voltar para as vagas</Link>
+      <Link href="/vagas" className="inline-flex items-center gap-1 text-sm font-medium text-indigo-700 hover:text-indigo-900">← Voltar para as vagas</Link>
 
-      <header className="rounded-xl border border-slate-200 bg-white p-6">
+      <header className="cartao p-6 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">{vaga.titulo}</h1>
-            <p className="text-slate-600">{vaga.empresa} · {rotuloDoLocal(vaga)}</p>
+          <div className="flex items-start gap-4">
+            <AvatarDaEmpresa empresa={vaga.empresa} tamanho="grande" />
+            <div>
+              <h1 className="text-2xl font-bold leading-tight tracking-tight">{vaga.titulo}</h1>
+              <p className="mt-1 text-slate-600">{vaga.empresa} · {rotuloDoLocal(vaga)}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             {temPerfil && !semRequisitos && <SeloCompatibilidade percentual={compat.percentual} />}
@@ -81,20 +86,16 @@ export default async function PaginaDaVaga({ params }: Props) {
           </div>
         </div>
         {!vaga.ativa && (
-          <p className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-800">
+          <p className="mt-3 rounded-xl ring-1 ring-inset ring-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-800">
             <strong>Possivelmente encerrada.</strong> Esta vaga não apareceu mais na fonte. Confirme no anúncio original antes de
             se candidatar.
           </p>
         )}
-        <div className="mt-3 flex flex-wrap gap-2 text-xs">
-          <span className={`rounded px-2 py-1 ${vaga.tipo === "indefinido" ? "bg-slate-100 text-slate-600" : "bg-indigo-50 text-indigo-700"}`}>
-            {ROTULO_TIPO[vaga.tipo] ?? vaga.tipo}
-          </span>
-          {vaga.contrato && vaga.contrato !== "estagio" && (
-            <span className="rounded bg-violet-50 px-2 py-1 font-medium text-violet-800">{ROTULO_CONTRATO[vaga.contrato] ?? vaga.contrato}</span>
-          )}
-          <span className="rounded bg-slate-100 px-2 py-1">{ROTULO_MODALIDADE[vaga.modalidade] ?? vaga.modalidade}</span>
-          <span className="rounded bg-slate-100 px-2 py-1">{vaga.area}</span>
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          <Etiqueta variante={vaga.tipo === "indefinido" ? "neutra" : "nivel"}>{ROTULO_TIPO[vaga.tipo] ?? vaga.tipo}</Etiqueta>
+          {vaga.contrato && vaga.contrato !== "estagio" && <Etiqueta variante="regime">{ROTULO_CONTRATO[vaga.contrato] ?? vaga.contrato}</Etiqueta>}
+          <Etiqueta variante={vaga.modalidade === "remoto" ? "remoto" : "neutra"}>{ROTULO_MODALIDADE[vaga.modalidade] ?? vaga.modalidade}</Etiqueta>
+          <Etiqueta>{vaga.area}</Etiqueta>
         </div>
         {vaga.tipo === "indefinido" && (
           <p className="mt-3 text-xs text-slate-500">
@@ -120,7 +121,7 @@ export default async function PaginaDaVaga({ params }: Props) {
                 href={vaga.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                className="btn-primario"
               >
                 Ver vaga e candidatar-se ↗
               </a>
@@ -137,7 +138,7 @@ export default async function PaginaDaVaga({ params }: Props) {
       <DescricaoDaVaga detalhes={vaga.detalhes} descricao={vaga.descricao} />
 
       {semRequisitos ? (
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
+        <section className="cartao p-5">
           <h2 className="text-lg font-bold">O que a vaga pede</h2>
           <p className="mt-2 text-sm text-slate-700">
             O resumo deste anúncio não cita tecnologias específicas, então <strong>não calculamos compatibilidade</strong>{" "}
@@ -152,13 +153,13 @@ export default async function PaginaDaVaga({ params }: Props) {
       <section>
         <h2 className="text-lg font-bold">O que a vaga pede</h2>
         {!logado && (
-          <p className="mt-2 rounded-md bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+          <p className="mt-2 rounded-xl ring-1 ring-inset ring-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
             <Link href="/entrar" className="font-semibold underline">Entre</Link> ou{" "}
             <Link href="/cadastrar" className="font-semibold underline">crie sua conta</Link> para ver o que você já tem e o que falta.
           </p>
         )}
         {logado && !temPerfil && (
-          <p className="mt-2 rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="mt-2 rounded-xl ring-1 ring-inset ring-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             Seu perfil está sem habilidades. <Link href="/perfil" className="font-semibold underline">Envie seu currículo</Link>{" "}
             para comparar com esta vaga.
           </p>
@@ -166,7 +167,7 @@ export default async function PaginaDaVaga({ params }: Props) {
         <p className="mt-3 text-xs text-slate-500">
           Dica: passe o mouse (ou toque) no nome de uma habilidade para ver cursos gratuitos dela, sem sair desta página.
         </p>
-        <ul className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+        <ul className="mt-2 divide-y divide-slate-100 cartao">
           {vaga.requisitos.map((r) => {
             const lacuna = compat.lacunas.find((l) => l.slug === r.slug);
             const tem = temPerfil && !lacuna;
@@ -244,7 +245,7 @@ export default async function PaginaDaVaga({ params }: Props) {
       )}
 
       {temPerfil && !semRequisitos && lacunas.length === 0 && (
-        <p className="rounded-md bg-emerald-50 px-4 py-3 text-emerald-800">
+        <p className="rounded-xl ring-1 ring-inset ring-emerald-100 bg-emerald-50 px-4 py-3 text-emerald-800">
           Você cobre todos os requisitos desta vaga. Bom momento para se candidatar!
         </p>
       )}

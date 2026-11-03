@@ -20,10 +20,10 @@ export function Paginacao({ atual, totalPaginas, caminho, parametros }: Props) {
     return texto ? `${caminho}?${texto}` : caminho;
   };
 
-  const base = "rounded-md border px-3 py-1.5 text-sm";
-  const ativo = `${base} border-indigo-600 bg-indigo-600 font-semibold text-white`;
-  const normal = `${base} border-slate-300 bg-white hover:bg-slate-50`;
-  const desligado = `${base} border-slate-200 text-slate-400`;
+  const base = "rounded-lg border px-3.5 py-1.5 text-sm transition";
+  const ativo = `${base} border-indigo-600 bg-indigo-600 font-semibold text-white shadow-sm shadow-indigo-600/30`;
+  const normal = `${base} border-slate-200 bg-white text-slate-700 shadow-sm shadow-slate-900/5 hover:border-indigo-300 hover:text-indigo-700`;
+  const desligado = `${base} border-slate-200 bg-slate-50 text-slate-400`;
 
   return (
     <nav aria-label="Paginação" className="mt-8 flex flex-wrap items-center justify-center gap-2">

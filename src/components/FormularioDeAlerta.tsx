@@ -27,7 +27,7 @@ export function FormularioDeAlerta({ acao, areas, inicial }: Props) {
   // A chave refaz o formulário quando há valores devolvidos: o React volta os campos de seleção ao valor
   // do primeiro desenho depois de cada ação e ignora mudanças posteriores do valor padrão.
   return (
-    <form key={v ? JSON.stringify(v) : "inicial"} action={criar} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+    <form key={v ? JSON.stringify(v) : "inicial"} action={criar} className="space-y-3 cartao p-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <label>
           <span className={rotulo}>Estado</span>
@@ -64,10 +64,10 @@ export function FormularioDeAlerta({ acao, areas, inicial }: Props) {
         Escolha pelo menos um filtro. Só vagas com salário informado passam quando você define um mínimo.
       </p>
 
-      {estado?.erro && <p role="alert" className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{estado.erro}</p>}
-      {estado?.ok && <p role="status" className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{estado.ok}</p>}
+      {estado?.erro && <p role="alert" className="rounded-xl ring-1 ring-inset ring-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">{estado.erro}</p>}
+      {estado?.ok && <p role="status" className="rounded-xl ring-1 ring-inset ring-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{estado.ok}</p>}
 
-      <button disabled={pendente} className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60">
+      <button disabled={pendente} className="btn-primario">
         {pendente ? "Criando..." : "🔔 Criar alerta"}
       </button>
     </form>

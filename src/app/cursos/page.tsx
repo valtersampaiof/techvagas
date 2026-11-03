@@ -12,8 +12,8 @@ export const metadata: Metadata = { title: "Cursos" };
 
 type Parametros = FiltrosDeCursos & { pagina?: string };
 
-const campo = "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm";
-const rotulo = "block text-xs font-semibold uppercase tracking-wide text-slate-500";
+const campo = "campo mt-1";
+const rotulo = "legenda";
 
 export default async function PaginaDeCursos({ searchParams }: { searchParams: Promise<Parametros> }) {
   const { pagina: paginaTexto, ...filtros } = await searchParams;
@@ -28,13 +28,13 @@ export default async function PaginaDeCursos({ searchParams }: { searchParams: P
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Cursos para se aprofundar</h1>
-      <p className="mt-1 text-sm text-slate-600">
+      <h1 className="titulo-de-pagina">Cursos para se aprofundar</h1>
+      <p className="mt-1 text-slate-600">
         Gratuitos e pagos, de plataformas conhecidas, do básico ao avançado. Preço, carga horária, certificado e idioma podem
         mudar: confira no site de cada instituição.
       </p>
 
-      <form method="get" className="mt-5 space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+      <form method="get" className="cartao mt-6 space-y-4 p-5">
         <label className="block">
           <span className={rotulo}>Buscar</span>
           <input
@@ -104,8 +104,8 @@ export default async function PaginaDeCursos({ searchParams }: { searchParams: P
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Filtrar</button>
-          {temFiltro && <Link href="/cursos" className="text-sm text-slate-600 underline">Limpar filtros</Link>}
+          <button className="btn-primario">Filtrar</button>
+          {temFiltro && <Link href="/cursos" className="btn-secundario">Limpar filtros</Link>}
         </div>
       </form>
 

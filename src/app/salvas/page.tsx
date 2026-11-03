@@ -14,11 +14,11 @@ export default async function PaginaDeVagasSalvas() {
   if (!usuario) {
     return (
       <div className="mx-auto max-w-md text-center">
-        <h1 className="text-2xl font-bold">Vagas salvas</h1>
+        <h1 className="titulo-de-pagina">Vagas salvas</h1>
         <p className="mt-3 text-slate-600">Entre na sua conta para guardar vagas e voltar a elas depois.</p>
         <div className="mt-5 flex justify-center gap-3">
           <Link href="/entrar" className="rounded-md border border-slate-300 px-4 py-2 hover:bg-slate-50">Entrar</Link>
-          <Link href="/cadastrar" className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700">Criar conta</Link>
+          <Link href="/cadastrar" className="btn-primario">Criar conta</Link>
         </div>
       </div>
     );
@@ -30,14 +30,14 @@ export default async function PaginaDeVagasSalvas() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Vagas salvas</h1>
+      <h1 className="titulo-de-pagina">Vagas salvas</h1>
       <p className="mt-1 text-sm text-slate-600">
         As vagas que você guardou, da mais recente para a mais antiga.{" "}
         <Link href="/alertas" className="font-medium text-indigo-700 underline">Receber aviso por e-mail de vagas novas</Link>
       </p>
 
       {encerradas > 0 && (
-        <p className="mt-4 rounded-md bg-rose-50 px-4 py-3 text-sm text-rose-800">
+        <p className="mt-4 rounded-xl ring-1 ring-inset ring-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-800">
           {encerradas === 1 ? "1 vaga salva não aparece mais" : `${encerradas} vagas salvas não aparecem mais`} na fonte e
           pode ter sido encerrada. Confirme no anúncio original antes de se candidatar.
         </p>
@@ -47,7 +47,7 @@ export default async function PaginaDeVagasSalvas() {
         <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
           <p className="text-slate-700">Você ainda não salvou nenhuma vaga.</p>
           <p className="mt-1 text-sm text-slate-500">Toque na estrela (☆) de uma vaga para guardá-la aqui.</p>
-          <Link href="/vagas" className="mt-4 inline-block rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+          <Link href="/vagas" className="mt-4 btn-primario">
             Ver vagas
           </Link>
         </div>

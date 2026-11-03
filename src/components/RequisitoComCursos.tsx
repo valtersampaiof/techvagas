@@ -109,7 +109,7 @@ export function RequisitoComCursos({ nome, slug, cursos }: Props) {
           id={idDoQuadro}
           role="dialog"
           aria-label={`Cursos gratuitos de ${nome}`}
-          className="absolute left-0 top-full z-30 mt-2 w-[min(24rem,calc(100vw-4rem))] rounded-xl border border-slate-200 bg-white p-3 text-left font-normal shadow-xl"
+          className="absolute left-0 top-full z-30 mt-2 w-[min(24rem,calc(100vw-4rem))] cartao p-3 text-left font-normal shadow-xl"
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Cursos gratuitos de {nome}</p>
 

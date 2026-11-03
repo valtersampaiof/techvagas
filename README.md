@@ -5,6 +5,8 @@
 Projeto pessoal feito com Next.js, TypeScript e Prisma. Reúne milhares de vagas de várias fontes, compara o currículo
 de quem procura com os requisitos de cada vaga e indica cursos gratuitos e pagos, com certificado, para fechar o que falta.
 
+![Página inicial do TechVagas](docs/img/inicio.png)
+
 ![Lista de vagas com filtros de regime, nível, modalidade, estado e salário](docs/img/vagas.png)
 
 ## Destaques

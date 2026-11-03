@@ -66,7 +66,7 @@ function Linha({ rotulo, valores, vazio }: { rotulo: string; valores: string[]; 
 
 function QuadroDeRequisitos({ fatos }: { fatos: DescricaoOrganizada["fatos"] }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="requisitos-gerais">
+    <section className="cartao p-5" aria-labelledby="requisitos-gerais">
       <h2 id="requisitos-gerais" className="text-lg font-bold">Requisitos da vaga</h2>
       <p className="mt-1 text-xs text-slate-500">
         Lidos do texto do anúncio, além das habilidades técnicas que aparecem mais abaixo. Confira na vaga original.
@@ -95,7 +95,7 @@ export function DescricaoDaVaga({ detalhes, descricao }: Props) {
   return (
     <>
       <QuadroDeRequisitos fatos={organizada.fatos} />
-      <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="descricao-da-vaga">
+      <section className="space-y-5 cartao p-5" aria-labelledby="descricao-da-vaga">
         <h2 id="descricao-da-vaga" className="text-lg font-bold">Descrição da vaga</h2>
         {organizada.secoes.map((s, i) => <Bloco key={`${s.id}-${i}`} secao={s} />)}
       </section>

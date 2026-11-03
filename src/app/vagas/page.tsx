@@ -34,7 +34,7 @@ type Parametros = {
 
 
 
-const seletor = "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm";
+const seletor = "campo sm:!w-auto";
 const COMPATIBILIDADE_MINIMA = 60;
 const LIMITE_DE_SUGESTOES_DE_CIDADE = 300;
 
@@ -142,25 +142,25 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Vagas de TI</h1>
-      <p className="mt-1 text-sm text-slate-600">Do estágio à liderança, em CLT e PJ. Filtre pelo seu nível e veja o que falta para chegar lá.</p>
+      <h1 className="titulo-de-pagina">Vagas de TI</h1>
+      <p className="mt-1 text-slate-600">Do estágio à liderança, em CLT, PJ e estágio. Filtre pelo seu nível e veja o que falta para chegar lá.</p>
 
       {!usuario ? (
-        <p className="mt-2 rounded-md bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+        <p className="mt-2 rounded-xl ring-1 ring-inset ring-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
           <Link href="/cadastrar" className="font-semibold underline">Crie sua conta</Link> e envie seu currículo para ver
           a compatibilidade de cada vaga com o seu perfil.
         </p>
       ) : !temPerfil ? (
-        <p className="mt-2 rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="mt-2 rounded-xl ring-1 ring-inset ring-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Seu perfil ainda não tem habilidades.{" "}
           <Link href="/perfil" className="font-semibold underline">Complete o perfil</Link> para ordenar as vagas pela
           compatibilidade.
         </p>
       ) : null}
 
-      <form className="mt-5 space-y-3" method="get">
-        <div className="flex flex-wrap items-end gap-3">
-          <input name="busca" defaultValue={filtros.busca} placeholder="Buscar por cargo ou empresa" className={`${seletor} min-w-60 flex-1`} />
+      <form className="cartao mt-6 divide-y divide-slate-100" method="get">
+        <div className="flex flex-wrap items-end gap-3 p-4">
+          <input name="busca" defaultValue={filtros.busca} placeholder="🔍  Buscar por cargo ou empresa" aria-label="Buscar por cargo ou empresa" className={`${seletor} min-w-60 flex-1`} />
           <RegimeENivel contratoInicial={contrato ?? ""} tipoInicial={tipo ?? ""} classeDoSeletor={seletor} />
           <select name="modalidade" defaultValue={filtros.modalidade ?? ""} className={seletor} aria-label="Modalidade">
             <option value="">Qualquer modalidade</option>
@@ -175,8 +175,8 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
           </p>
         </div>
 
-        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3">
-          <span className="text-sm font-medium text-slate-700">Onde:</span>
+        <div className="flex flex-wrap items-end gap-3 p-4">
+          <span className="legenda self-center">Onde</span>
           <select name="uf" defaultValue={uf ?? ""} className={seletor} aria-label="Estado">
             <option value="">Todos os estados</option>
             {estados.map((e) => <option key={e.sigla} value={e.sigla}>{e.nome} ({e.sigla}) · {e.n}</option>)}
@@ -206,8 +206,8 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
           )}
         </div>
 
-        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-3">
-          <span className="text-sm font-medium text-slate-700">Quando e quanto:</span>
+        <div className="flex flex-wrap items-end gap-3 p-4">
+          <span className="legenda self-center">Quando e quanto</span>
           <select name="publicada" defaultValue={publicadaHaDias ? String(publicadaHaDias) : ""} className={seletor} aria-label="Publicada">
             <option value="">Publicada em qualquer data</option>
             {Object.entries(PUBLICACOES).map(([valor, nome]) => <option key={valor} value={valor}>{nome}</option>)}
@@ -226,15 +226,15 @@ export default async function PaginaDeVagas({ searchParams }: { searchParams: Pr
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 rounded-b-2xl bg-slate-50/70 p-4">
           {temPerfil && (
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="compativeis" value="1" defaultChecked={!!filtros.compativeis} />
               Só as que combinam comigo ({COMPATIBILIDADE_MINIMA}%+)
             </label>
           )}
-          <button className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Filtrar</button>
-          <Link href="/vagas" className="text-sm text-slate-600 underline">Limpar</Link>
+          <button className="btn-primario">Filtrar</button>
+          <Link href="/vagas" className="btn-secundario">Limpar</Link>
         </div>
       </form>
 

@@ -78,7 +78,7 @@ export function EditorDePerfil({ catalogo, inicial, curso, cidade, acao }: Props
 
   return (
     <form action={salvar} className="space-y-8">
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <section className="cartao p-5">
         <h2 className="font-semibold">1. Envie seu currículo (opcional)</h2>
         <p className="mt-1 text-sm text-slate-600">
           Aceitamos PDF de até 5 MB. O arquivo é lido na hora para achar suas habilidades e <strong>não fica salvo</strong>.
@@ -104,7 +104,7 @@ export function EditorDePerfil({ catalogo, inicial, curso, cidade, acao }: Props
         )}
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <section className="cartao p-5">
         <h2 className="font-semibold">2. Confira suas habilidades</h2>
         <p className="mt-1 text-sm text-slate-600">Marque o que você sabe e escolha seu nível em cada uma.</p>
         <div className="mt-4 space-y-5">
@@ -148,7 +148,7 @@ export function EditorDePerfil({ catalogo, inicial, curso, cidade, acao }: Props
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <section className="cartao p-5">
         <h2 className="font-semibold">3. Sobre você</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-medium">
@@ -165,12 +165,12 @@ export function EditorDePerfil({ catalogo, inicial, curso, cidade, acao }: Props
       <input type="hidden" name="habilidades" value={JSON.stringify(lista)} />
 
       {estado?.erro && (
-        <p role="alert" className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <p role="alert" className="rounded-xl ring-1 ring-inset ring-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
           {estado.erro}
         </p>
       )}
       {estado?.ok && (
-        <p role="status" className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p role="status" className="rounded-xl ring-1 ring-inset ring-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           {estado.ok}{" "}
           <Link href="/vagas?compativeis=1" className="font-semibold underline">
             Ver vagas
@@ -180,7 +180,7 @@ export function EditorDePerfil({ catalogo, inicial, curso, cidade, acao }: Props
 
       <button
         disabled={salvando}
-        className="rounded-md bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+        className="btn-primario"
       >
         {salvando ? "Salvando..." : "Salvar perfil"}
       </button>
