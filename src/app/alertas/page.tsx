@@ -9,7 +9,9 @@ import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { formatarPublicacao } from "@/lib/formatar";
 import { usuarioAtual } from "@/lib/sessao";
 import { ajustarRegime } from "@/lib/tipos-de-vaga";
+import { AvisoDeEmail } from "@/components/AvisoDeEmail";
 import { FormularioDeAlerta } from "@/components/FormularioDeAlerta";
+import { emailValidado } from "@/lib/seguranca";
 
 export const metadata: Metadata = { title: "Alertas por e-mail" };
 
@@ -24,7 +26,7 @@ export default async function PaginaDeAlertas({ searchParams }: { searchParams: 
         <h1 className="titulo-de-pagina">Alertas por e-mail</h1>
         <p className="mt-3 text-slate-600">Entre na sua conta para receber aviso de vagas novas na sua cidade.</p>
         <div className="mt-5 flex justify-center gap-3">
-          <Link href="/entrar" className="rounded-md border border-slate-300 px-4 py-2 hover:bg-slate-50">Entrar</Link>
+          <Link href="/entrar" className="btn-secundario">Entrar</Link>
           <Link href="/cadastrar" className="btn-primario">Criar conta</Link>
         </div>
       </div>
@@ -54,6 +56,12 @@ export default async function PaginaDeAlertas({ searchParams }: { searchParams: 
         Receba um e-mail em <strong>{usuario.email}</strong> quando o site achar vagas <strong>novas</strong> que combinam com o que
         você procura. Você pode ter até {MAX_ALERTAS_POR_PESSOA} alertas e cancelar quando quiser (cada e-mail traz o link para isso).
       </p>
+
+      {!emailValidado(usuario.emailConfirmadoEm, emailConfigurado()) && (
+        <div className="mt-4">
+          <AvisoDeEmail email={usuario.email} />
+        </div>
+      )}
 
       {!emailConfigurado() && (
         <p className="mt-4 rounded-xl ring-1 ring-inset ring-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">

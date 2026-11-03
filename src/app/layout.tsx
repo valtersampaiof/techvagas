@@ -14,6 +14,7 @@ const linksDoRodape = [
   { href: "/cursos", rotulo: "Cursos" },
   { href: "/alertas", rotulo: "Alertas por e-mail" },
   { href: "/perfil", rotulo: "Meu perfil" },
+  { href: "/privacidade", rotulo: "Privacidade" },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

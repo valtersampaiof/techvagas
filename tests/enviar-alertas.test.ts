@@ -82,7 +82,7 @@ beforeEach(async () => {
   await db.alerta.deleteMany();
   await db.vaga.deleteMany();
   await db.usuario.deleteMany();
-  usuario = await db.usuario.create({ data: { nome: "Ana Souza", email: "ana@exemplo.com", senhaHash: "x" } });
+  usuario = await db.usuario.create({ data: { nome: "Ana Souza", email: "ana@exemplo.com", senhaHash: "x", emailConfirmadoEm: new Date() } });
 });
 
 async function criarAlerta(extra: Record<string, unknown> = {}) {
@@ -117,6 +117,14 @@ describe("enviarAlertas (com um servidor SMTP de verdade)", () => {
     // mailparser esconde o cabeçalho dentro de "list"; a linha bruta mostra o que realmente foi enviado.
     const linhaDeCancelamento = m.headerLines.find((h) => h.key === "list-unsubscribe")?.line ?? "";
     expect(linhaDeCancelamento).toMatch(/^List-Unsubscribe: <https:\/\/techvagas\.exemplo\/alertas\/cancelar\?token=tok-[^>]+>$/);
+  });
+
+  it("não manda alertas para um e-mail que ainda não foi confirmado", async () => {
+    await db.usuario.update({ where: { id: usuario.id }, data: { emailConfirmadoEm: null } });
+    await criarVaga("Nova em Recife", "Recife, PE");
+    await criarAlerta();
+    expect(await executar()).toEqual([]);
+    expect(recebidos).toHaveLength(0);
   });
 
   it("vaga antiga de banco antigo (data gravada como texto) não conta como nova", async () => {
@@ -178,7 +186,7 @@ describe("enviarAlertas (com um servidor SMTP de verdade)", () => {
   it("um alerta com erro não impede os outros", async () => {
     await criarVaga("Vaga A", "Recife, PE");
     await criarAlerta();
-    const outra = await db.usuario.create({ data: { nome: "Bia", email: "bia@exemplo.com", senhaHash: "x" } });
+    const outra = await db.usuario.create({ data: { nome: "Bia", email: "bia@exemplo.com", senhaHash: "x", emailConfirmadoEm: new Date() } });
     await db.alerta.create({ data: { usuarioId: outra.id, nome: "Vagas em PE", uf: "PE", token: "tok-bia", criadoEm: minutos(-60) } });
 
     let chamadas = 0;

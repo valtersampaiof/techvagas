@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { bloqueioDoLogin, limparFalhasDeLogin, registrarFalhaDeLogin } from "@/lib/contas";
+import { emailConfigurado } from "@/lib/email";
+import { enviarConfirmacao } from "@/lib/enviar-confirmacao";
+import { emailValidado } from "@/lib/seguranca";
 import { criarSessao, encerrarSessao, usuarioAtual } from "@/lib/sessao";
 import { ehNivel } from "@/lib/niveis";
 import { MAX_ALERTAS_POR_PESSOA, gerarToken, nomeDoAlerta, temAlgumFiltro } from "@/lib/alertas";
@@ -26,6 +30,7 @@ const esquemaCadastro = z.object({
   nome: z.string().trim().min(2, "Informe seu nome."),
   email: z.string().trim().toLowerCase().email("E-mail inválido."),
   senha: z.string().min(8, "A senha precisa de pelo menos 8 caracteres."),
+  aceito: z.literal("on", { message: "Para criar a conta, aceite a política de privacidade." }),
 });
 
 export async function cadastrar(_: EstadoDoFormulario, formData: FormData): Promise<EstadoDoFormulario> {
@@ -40,9 +45,11 @@ export async function cadastrar(_: EstadoDoFormulario, formData: FormData): Prom
   if (await db.usuario.findUnique({ where: { email } })) {
     return { erro: "Já existe uma conta com este e-mail.", campos: digitado };
   }
+  // Sem servidor de e-mail configurado não há como confirmar o endereço, então a conta já nasce confirmada.
   const usuario = await db.usuario.create({
-    data: { nome, email, senhaHash: await bcrypt.hash(senha, 10) },
+    data: { nome, email, senhaHash: await bcrypt.hash(senha, 10), emailConfirmadoEm: emailConfigurado() ? null : new Date() },
   });
+  await enviarConfirmacao(usuario);
   await criarSessao(usuario.id);
   redirect("/perfil");
 }
@@ -51,12 +58,21 @@ export async function entrar(_: EstadoDoFormulario, formData: FormData): Promise
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const senha = String(formData.get("senha") ?? "");
 
+  // Depois de várias senhas erradas seguidas, o e-mail fica bloqueado por um tempo (vale também para e-mails sem conta,
+  // para não revelar quais têm).
+  const minutos = await bloqueioDoLogin(db, email);
+  if (minutos > 0) {
+    return { erro: `Muitas tentativas erradas. Tente de novo em ${minutos} ${minutos === 1 ? "minuto" : "minutos"}.`, campos: { email } };
+  }
+
   const usuario = await db.usuario.findUnique({ where: { email } });
   // Mesma mensagem para e-mail inexistente e senha errada.
   if (!usuario || !(await bcrypt.compare(senha, usuario.senhaHash))) {
+    await registrarFalhaDeLogin(db, email);
     return { erro: "E-mail ou senha incorretos.", campos: { email } };
   }
-  await criarSessao(usuario.id);
+  await limparFalhasDeLogin(db, email);
+  await criarSessao(usuario.id, usuario.sessaoVersao);
   redirect("/vagas");
 }
 
@@ -149,6 +165,10 @@ export async function criarAlerta(_: EstadoDoFormulario, formData: FormData): Pr
   };
   // Em qualquer erro, devolvemos o que a pessoa escolheu: o formulário se limpa sozinho depois de cada envio.
   const recusar = (erro: string): EstadoDoFormulario => ({ erro, campos: digitado });
+
+  if (!emailValidado(usuario.emailConfirmadoEm, emailConfigurado())) {
+    return recusar("Confirme seu e-mail antes de criar alertas: mandamos um link para a sua caixa de entrada.");
+  }
 
   const dados = esquemaAlerta.safeParse(digitado);
   if (!dados.success) return recusar(dados.error.issues[0].message);

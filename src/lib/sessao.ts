@@ -15,9 +15,9 @@ function segredo() {
   return new TextEncoder().encode(valor ?? "segredo-apenas-para-desenvolvimento");
 }
 
-export async function criarSessao(usuarioId: number) {
+export async function criarSessao(usuarioId: number, versao = 0) {
   const expira = new Date(Date.now() + DURACAO_EM_DIAS * 24 * 60 * 60 * 1000);
-  const token = await new SignJWT({ usuarioId })
+  const token = await new SignJWT({ usuarioId, v: versao })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(expira)
@@ -36,12 +36,13 @@ export async function encerrarSessao() {
   (await cookies()).delete(NOME_DO_COOKIE);
 }
 
-async function lerUsuarioId(): Promise<number | null> {
+async function lerSessao(): Promise<{ usuarioId: number; versao: number } | null> {
   const token = (await cookies()).get(NOME_DO_COOKIE)?.value;
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, segredo());
-    return typeof payload.usuarioId === "number" ? payload.usuarioId : null;
+    if (typeof payload.usuarioId !== "number") return null;
+    return { usuarioId: payload.usuarioId, versao: typeof payload.v === "number" ? payload.v : 0 };
   } catch {
     return null;
   }
@@ -49,17 +50,22 @@ async function lerUsuarioId(): Promise<number | null> {
 
 /** Usuário logado (ou null), com as habilidades. Consulta feita uma vez por requisição. */
 export const usuarioAtual = cache(async () => {
-  const id = await lerUsuarioId();
-  if (id === null) return null;
-  return db.usuario.findUnique({
-    where: { id },
+  const sessao = await lerSessao();
+  if (sessao === null) return null;
+  const usuario = await db.usuario.findUnique({
+    where: { id: sessao.usuarioId },
     select: {
       id: true,
       nome: true,
       email: true,
       curso: true,
       cidade: true,
+      emailConfirmadoEm: true,
+      sessaoVersao: true,
       habilidades: { select: { nivel: true, habilidade: { select: { id: true, slug: true, nome: true } } } },
     },
   });
+  // Depois de redefinir a senha, as sessões abertas antes (por exemplo, em outro aparelho) deixam de valer.
+  if (!usuario || usuario.sessaoVersao !== sessao.versao) return null;
+  return usuario;
 });

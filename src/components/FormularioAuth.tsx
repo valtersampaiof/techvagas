@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import type { EstadoDoFormulario } from "@/app/acoes";
 
@@ -37,6 +38,14 @@ export function FormularioAuth({ acao, modo }: Props) {
         />
         {modo === "cadastrar" && <span className="text-xs font-normal text-slate-500">Mínimo de 8 caracteres.</span>}
       </label>
+      {modo === "cadastrar" && (
+        <label className="flex items-start gap-2 text-sm text-slate-600">
+          <input type="checkbox" name="aceito" required className="mt-0.5" />
+          <span>
+            Li e aceito a <Link href="/privacidade" target="_blank" className="font-medium text-indigo-700 hover:underline">política de privacidade</Link>.
+          </span>
+        </label>
+      )}
       {estado?.erro && (
         <p role="alert" className="rounded-xl ring-1 ring-inset ring-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
           {estado.erro}

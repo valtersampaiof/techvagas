@@ -38,7 +38,8 @@ export async function enviarAlertas(opcoes: Opcoes): Promise<ResultadoDoAlerta[]
   await normalizarDatasDeDescoberta(db);
   const fonte = criarFonteDeVagas(db);
   const alertas = await db.alerta.findMany({
-    where: { ativo: true },
+    // Só e-mails confirmados: ninguém recebe alertas num endereço que não é dela.
+    where: { ativo: true, usuario: { emailConfirmadoEm: { not: null } } },
     include: { usuario: { include: { habilidades: { include: { habilidade: { select: { slug: true } } } } } } },
     orderBy: { id: "asc" },
   });

@@ -265,4 +265,7 @@ Cuidados que já estão no código:
   ou bloqueiam programas automáticos (Udemy, PMI, GitHub) ou não puderam ser abertos dali; os que deram erro 404 foram corrigidos.
 - Os requisitos das vagas reais são **estimados automaticamente** pelo texto do anúncio, e o site avisa isso na tela.
 - Em produção, defina `SEGREDO_SESSAO` e troque o SQLite por Postgres (`prisma/schema.prisma`).
-- Ainda não há recuperação de senha, limite de tentativas de login nem confirmação de e-mail.
+- **Segurança da conta:** há "esqueci minha senha" (link por e-mail, válido por 1 hora e uma vez só), confirmação de e-mail
+  (alertas só vão para e-mails confirmados), bloqueio de 15 minutos após 5 senhas erradas, página de privacidade e botão
+  para excluir a própria conta. Redefinir a senha encerra as sessões abertas. Falta ainda a autenticação em dois passos.
+  Sem servidor de e-mail configurado, as contas já nascem com o e-mail confirmado e a recuperação de senha fica indisponível.

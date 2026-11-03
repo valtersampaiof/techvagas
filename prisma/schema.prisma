@@ -29,10 +29,37 @@ model Usuario {
   curso         String   @default("")
   cidade        String   @default("")
   criadoEm      DateTime @default(now())
+  // Quando a pessoa confirmou o e-mail pelo link enviado. Alertas só são enviados a e-mails confirmados.
+  emailConfirmadoEm DateTime?
+  // Sobe ao redefinir a senha: as sessões abertas antes deixam de valer.
+  sessaoVersao  Int      @default(0)
 
   habilidades   HabilidadeDoUsuario[]
   vagasSalvas   VagaSalva[]
   alertas       Alerta[]
+  tokens        TokenDeConta[]
+}
+
+// Links de uso único enviados por e-mail ("confirmar e-mail" e "redefinir senha"). Só o resumo (hash) do código fica no banco.
+model TokenDeConta {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int
+  tipo       String   // "email" | "senha"
+  tokenHash  String   @unique
+  expiraEm   DateTime
+  criadoEm   DateTime @default(now())
+
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, tipo])
+}
+
+// Falhas de login por e-mail (existindo conta ou não, para não revelar quais e-mails têm conta).
+model TentativaDeLogin {
+  email          String    @id
+  falhas         Int       @default(0)
+  ultimaFalhaEm  DateTime
+  bloqueadoAte   DateTime?
 }
 
 model HabilidadeDoUsuario {
