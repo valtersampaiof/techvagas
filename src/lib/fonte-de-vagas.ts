@@ -31,6 +31,23 @@ export type FiltrosDeVagas = {
 
 export type LocalComVagas = { uf: string; cidade: string; vagas: number };
 
+export type HabilidadePedida = {
+  slug: string;
+  nome: string;
+  /** Em quantas das vagas analisadas a habilidade aparece. */
+  vagas: number;
+  /** Em quantas delas ela é obrigatória (e não só desejável). */
+  obrigatorias: number;
+};
+
+export type HabilidadesMaisPedidas = {
+  /** Vagas que passam nos filtros. */
+  totalDeVagas: number;
+  /** Vagas em que o site identificou ao menos um requisito: é a base dos percentuais. */
+  vagasAnalisadas: number;
+  habilidades: HabilidadePedida[];
+};
+
 export type VagaComRequisitos = {
   id: number;
   titulo: string;
@@ -75,6 +92,8 @@ export interface FonteDeVagas {
   locais(): Promise<LocalComVagas[]>;
   /** As vagas com estes números (inclusive as inativas), na ordem pedida; as que não existem mais ficam de fora. */
   porIds(ids: number[]): Promise<VagaComRequisitos[]>;
+  /** As habilidades que mais aparecem nos requisitos das vagas que passam nos filtros, da mais pedida para a menos. */
+  habilidadesMaisPedidas(filtros: Pick<FiltrosDeVagas, "tipo" | "contrato" | "modalidade" | "area">): Promise<HabilidadesMaisPedidas>;
 }
 
 // Os requisitos vêm só com o número da habilidade; o nome vem de um mapa em memória (são poucas dezenas de habilidades).
@@ -140,6 +159,17 @@ function converter(v: VagaDoBanco, habilidades: HabilidadesPorId, completa = fal
   };
 }
 
+/** Filtros de nível, regime, modalidade e área (os que a lista de vagas e a página de mercado têm em comum). */
+function condicoesBasicas({ tipo, contrato, modalidade, area }: Pick<FiltrosDeVagas, "tipo" | "contrato" | "modalidade" | "area">) {
+  return [
+    // Uma vaga "Pleno/Sênior" aparece nos dois níveis.
+    tipo ? { OR: [{ tipo }, { niveisExtras: { contains: `,${tipo},` } }] } : {},
+    contrato ? { contrato: { in: contratosDoFiltro(contrato) } } : {},
+    modalidade ? { modalidade } : {},
+    area ? { area } : {},
+  ];
+}
+
 export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
   async function habilidadesPorId(): Promise<HabilidadesPorId> {
     const linhas = await banco.habilidade.findMany({ select: { id: true, slug: true, nome: true } });
@@ -170,11 +200,7 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
         where: {
           AND: [
             filtroDaOrigem,
-            // Uma vaga "Pleno/Sênior" aparece nos dois níveis.
-            tipo ? { OR: [{ tipo }, { niveisExtras: { contains: `,${tipo},` } }] } : {},
-            contrato ? { contrato: { in: contratosDoFiltro(contrato) } } : {},
-            modalidade ? { modalidade } : {},
-            area ? { area } : {},
+            ...condicoesBasicas({ tipo, contrato, modalidade, area }),
             // Com estado/cidade, as vagas remotas também servem (a menos que a pessoa peça só a região).
             temRegiao ? (somenteRegiao ? regiao : { OR: [regiao, { modalidade: "remoto" }] }) : {},
             // Vale o teto da faixa ("R$ 1.500 a R$ 1.900" serve para quem quer 1.800+); "a partir de" vale o piso.
@@ -213,6 +239,25 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
         orderBy: { area: "asc" },
       });
       return linhas.map((l) => l.area);
+    },
+
+    async habilidadesMaisPedidas(filtros) {
+      const where = { AND: [await filtroDeOrigem(), ...condicoesBasicas(filtros)] };
+      const comRequisitos = { AND: [...where.AND, { requisitos: { some: {} } }] };
+      const [totalDeVagas, vagasAnalisadas, pedidas, obrigatorias, habilidades] = await Promise.all([
+        banco.vaga.count({ where }),
+        banco.vaga.count({ where: comRequisitos }),
+        banco.requisitoDaVaga.groupBy({ by: ["habilidadeId"], where: { vaga: where }, _count: { _all: true } }),
+        banco.requisitoDaVaga.groupBy({ by: ["habilidadeId"], where: { vaga: where, obrigatorio: true }, _count: { _all: true } }),
+        habilidadesPorId(),
+      ]);
+      const obrigatoriasPorId = new Map(obrigatorias.map((o) => [o.habilidadeId, o._count._all]));
+      const lista = pedidas.flatMap((p) => {
+        const h = habilidades.get(p.habilidadeId);
+        return h ? [{ slug: h.slug, nome: h.nome, vagas: p._count._all, obrigatorias: obrigatoriasPorId.get(p.habilidadeId) ?? 0 }] : [];
+      });
+      lista.sort((a, b) => b.vagas - a.vagas || b.obrigatorias - a.obrigatorias || a.nome.localeCompare(b.nome, "pt-BR"));
+      return { totalDeVagas, vagasAnalisadas, habilidades: lista };
     },
 
     async porIds(ids) {

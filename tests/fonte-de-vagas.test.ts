@@ -69,6 +69,38 @@ describe("listar com filtro de regime", () => {
   });
 });
 
+describe("habilidadesMaisPedidas", () => {
+  it("conta as habilidades pelas vagas que passam nos filtros e ordena da mais pedida para a menos", async () => {
+    const sql = await db.habilidade.create({ data: { slug: "t-sql", nome: "SQL", area: "Dados" } });
+    const py = await db.habilidade.create({ data: { slug: "t-py", nome: "Python", area: "Dados" } });
+    const nova = async (titulo: string, tipo: string, contrato: string, reqs: [number, boolean][]) =>
+      db.vaga.create({
+        data: {
+          titulo, empresa: "Acme", cidade: "Brasil", modalidade: "remoto", tipo, contrato, area: "Dados", descricao: "x", origem: "gupy", idExterno: `m-${titulo}`,
+          requisitos: { create: reqs.map(([habilidadeId, obrigatorio]) => ({ habilidadeId, nivelMinimo: "iniciante", obrigatorio })) },
+        },
+      });
+    await nova("M1", "pleno", "clt", [[sql.id, true], [py.id, false]]);
+    await nova("M2", "pleno", "clt", [[sql.id, true]]);
+    await nova("M3", "junior", "pj", [[py.id, true]]);
+    await nova("M4", "pleno", "clt", []); // sem requisitos identificados: conta no total, mas não entra na base
+
+    const pleno = await fonte.habilidadesMaisPedidas({ tipo: "pleno" });
+    expect(pleno.totalDeVagas).toBe(3);
+    expect(pleno.vagasAnalisadas).toBe(2);
+    expect(pleno.habilidades.map((h) => [h.slug, h.vagas, h.obrigatorias])).toEqual([["t-sql", 2, 2], ["t-py", 1, 0]]);
+
+    const pj = await fonte.habilidadesMaisPedidas({ contrato: "pj" });
+    expect(pj.habilidades.map((h) => h.slug)).toEqual(["t-py"]);
+
+    const nenhuma = await fonte.habilidadesMaisPedidas({ tipo: "senior" });
+    expect(nenhuma).toEqual({ totalDeVagas: 0, vagasAnalisadas: 0, habilidades: [] });
+
+    await db.vaga.deleteMany({ where: { idExterno: { startsWith: "m-" } } });
+    await db.habilidade.deleteMany({ where: { slug: { in: ["t-sql", "t-py"] } } });
+  });
+});
+
 describe("listar com filtro de estado e cidade", () => {
   it("sem filtro de região devolve tudo", async () => {
     expect((await fonte.listar({})).length).toBe(8);
