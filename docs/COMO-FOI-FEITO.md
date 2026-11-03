@@ -98,7 +98,7 @@ Envia e-mails. É o que avisa "apareceram vagas novas com os filtros que você e
 
 ### 3.10 Vitest — os testes automáticos
 São programas que **testam o programa**. Exemplo: um teste diz "uma vaga com título 'Estágio em QA' nunca pode aparecer como
-CLT". Se alguém mudar algo e quebrar essa regra, o teste falha na hora. O projeto tem mais de 400 testes que rodam em cerca
+CLT". Se alguém mudar algo e quebrar essa regra, o teste falha na hora. O projeto tem mais de 450 testes que rodam em cerca
 de 30 segundos.
 
 ### 3.11 ESLint — o revisor de estilo
@@ -113,6 +113,14 @@ Confere se o código segue boas práticas e aponta descuidos, como uma variável
 ### 3.13 Node.js e npm — o motor e a loja de peças
 **Node.js** permite rodar JavaScript fora do navegador (é o "motor" da cozinha). **npm** é a "loja de peças": baixa todas as
 ferramentas acima com um comando (`npm install`).
+
+### 3.14 Turso, Vercel e GitHub Actions — o site na internet, de graça
+Para o site sair do seu computador e ficar acessível a qualquer pessoa, usamos três serviços gratuitos:
+- **Turso:** guarda o banco de dados num servidor (é o mesmo tipo de banco que usamos no computador, só que online).
+- **Vercel:** hospeda e mostra o site.
+- **GitHub Actions:** uma "empregada automática" do GitHub que, a cada 6 horas, busca vagas novas e manda os alertas.
+
+Os três têm plano gratuito, mas com limites (a Vercel gratuita, por exemplo, é só para uso pessoal, não comercial).
 
 ---
 
@@ -214,6 +222,11 @@ Até aqui o site só rodava no computador. Preparamos três peças gratuitas: um
 banco, só que num servidor), a **Vercel** (que mostra o site) e o **GitHub Actions** (que busca vagas novas sozinho a cada 6 horas e
 manda os alertas). O guia passo a passo está em `docs/COLOCAR-NO-AR.md`.
 
+Como não dá para criar a sua conta no Turso por você, fiz um **teste com um "Turso de mentirinha"**: um servidor que fala o mesmo
+idioma do Turso e guarda os dados num arquivo. Por ele passaram a criação das tabelas, a carga dos 422 cursos, a busca de vagas,
+as consultas, as transações e a conferência do token de acesso. Esse teste achou uma coisa importante: o Turso agora tem dois
+tipos de banco, e o site só funciona com o tipo **libSQL**. O guia já avisa. O que ainda não foi testado é o **seu** banco real.
+
 ### Etapa 17 — Segurança da conta
 "Esqueci minha senha" (um link por e-mail que vale uma vez só), confirmação de e-mail, bloqueio por 15 minutos depois de 5 senhas
 erradas, política de privacidade e botão para excluir a própria conta.
@@ -288,6 +301,8 @@ Contar os erros é importante: eles mostram como se constrói software de verdad
 | Vaga "100% remoto" aparecendo como presencial | O título em inglês ("Remote") não era reconhecido | O título que diz "remoto" ou "remote" passou a valer |
 | Vaga "Pleno/Sênior" só aparecia em Pleno | Cada vaga tinha um único nível | Vagas com mais de um nível aparecem em todos os filtros deles |
 | "Tech Leader" sem nível | A palavra "leader" não estava na lista de liderança | Incluída |
+| Requisitos como "APIs RESTIntegrações" | A Gupy entrega os itens da lista colados | Separação automática dos casos seguros, sem estragar nomes como "JavaScript" (vale para as vagas buscadas daqui para frente) |
+| A lista de vagas ficaria pesada na internet | Cada página baixava os textos completos de todas as vagas (cerca de 13 MB) | As listas passaram a baixar só o que mostram |
 
 Há uma lição aqui: **cada correção virou um teste automático**, para o mesmo erro não voltar sem alguém perceber.
 
@@ -295,14 +310,18 @@ Há uma lição aqui: **cada correção virou um teste automático**, para o mes
 
 ## 8. O que o site ainda não faz bem (honestidade vale mais que enfeite)
 
-- **Texto colado:** cerca de 12% das vagas (a maioria da Gupy) chegam com palavras coladas, como "APIs RESTIntegrações". A
-  origem entrega o texto assim e uma correção automática poderia estragar nomes como "iFood".
+- **Ainda não está no ar de verdade:** o código e o guia estão prontos, mas criar as contas no Turso e na Vercel é com você. O
+  teste do banco online foi feito com um servidor de mentirinha, não com o banco real.
+- **Texto colado:** a separação automática já funciona, mas só vale para as vagas buscadas a partir de agora. As que já estão no
+  banco são corrigidas na próxima atualização. Nomes pouco comuns escritos com letra maiúscula no meio podem ser separados sem querer.
 - **Regime não informado:** quase metade das vagas não diz se é CLT ou PJ. Elas só aparecem em "Qualquer regime".
 - **Dados dos cursos:** preço, carga horária e certificado mudam com o tempo e **precisam ser conferidos** no site de cada
-  curso. O próprio site avisa isso.
+  curso. Há um comando que confere se os links ainda abrem.
 - **Requisitos estimados:** são lidos automaticamente do texto, e podem errar.
-- **Senha:** ainda não há "esqueci minha senha", limite de tentativas nem confirmação de e-mail. Antes de abrir ao público
-  geral, isso precisaria ser feito.
+- **Vagas afirmativas:** o filtro só pega as que o anúncio diz serem exclusivas ou afirmativas para um grupo. Declarações gerais
+  de diversidade ficam de fora de propósito, então algumas vagas podem não aparecer.
+- **Segurança:** já existem "esqueci minha senha", confirmação de e-mail, bloqueio após senhas erradas e exclusão da conta.
+  Falta a **autenticação em dois passos** (um segundo código no celular).
 - **Fonte não oficial:** a Gupy não oferece uma interface oficial para isso. O site usa o mesmo endereço do site deles, que
   pode mudar sem aviso. Se parar de funcionar, as outras fontes continuam.
 
@@ -318,9 +337,10 @@ Há uma lição aqui: **cada correção virou um teste automático**, para o mes
 | `src/lib/vagas/` | A "alfândega" e os conectores de cada fonte (`fontes/`) |
 | `src/lib/dados/` | O dicionário de habilidades, o catálogo de cursos e as vagas de exemplo |
 | `prisma/` | O desenho das tabelas, a "semente" e o arquivo do banco |
-| `scripts/` | Os comandos: atualizar vagas e enviar alertas |
-| `tests/` | Os mais de 400 testes automáticos |
-| `docs/` | Este documento e as imagens do README |
+| `scripts/` | Os comandos: atualizar vagas, enviar alertas, preparar o banco online e conferir os links dos cursos |
+| `tests/` | Os mais de 450 testes automáticos (inclusive o do banco online com o servidor de mentirinha) |
+| `.github/workflows/` | As tarefas automáticas do GitHub: atualizar vagas a cada 6 horas e conferir links dos cursos |
+| `docs/` | Este documento, o guia de publicação e as imagens do README |
 | `README.md` | A "capa" do projeto no GitHub |
 
 ---
