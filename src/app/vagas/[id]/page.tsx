@@ -7,13 +7,14 @@ import { fonteDeVagas } from "@/lib/fonte-de-vagas";
 import { ROTULO_NIVEL, ehNivel } from "@/lib/niveis";
 import { formatarPublicacao, formatarSalario } from "@/lib/formatar";
 import { ROTULO_CONTRATO, ROTULO_MODALIDADE, ROTULO_TIPO, rotuloDaOrigem, rotuloDoLocal } from "@/lib/rotulos";
-import { idsDasVagasSalvas } from "@/lib/salvas";
+import { acompanhamentoDaVaga } from "@/lib/salvas";
 import { usuarioAtual } from "@/lib/sessao";
 import { AvatarDaEmpresa } from "@/components/AvatarDaEmpresa";
 import { Etiqueta } from "@/components/Etiqueta";
 import { BotaoSalvar } from "@/components/BotaoSalvar";
 import { CartaoCurso } from "@/components/CartaoCurso";
 import { DescricaoDaVaga } from "@/components/DescricaoDaVaga";
+import { EtapaDaVaga } from "@/components/EtapaDaVaga";
 import { RequisitoComCursos } from "@/components/RequisitoComCursos";
 import { SeloCompatibilidade } from "@/components/SeloCompatibilidade";
 
@@ -41,7 +42,8 @@ export default async function PaginaDaVaga({ params }: Props) {
   const logado = usuario !== null;
   const temPerfil = habilidades.length > 0;
 
-  const salva = usuario ? (await idsDasVagasSalvas(usuario.id)).includes(vaga.id) : false;
+  const acompanhamento = usuario ? await acompanhamentoDaVaga(usuario.id, vaga.id) : null;
+  const salva = acompanhamento !== null;
   const semRequisitos = vaga.requisitos.length === 0;
   const salario = formatarSalario(vaga);
   const publicacao = formatarPublicacao(vaga.publicadaEm);
@@ -82,7 +84,7 @@ export default async function PaginaDaVaga({ params }: Props) {
           </div>
           <div className="flex items-center gap-3">
             {temPerfil && !semRequisitos && <SeloCompatibilidade percentual={compat.percentual} />}
-            <BotaoSalvar vagaId={vaga.id} salvaInicial={salva} logado={logado} variante="completo" />
+            <BotaoSalvar key={String(salva)} vagaId={vaga.id} salvaInicial={salva} logado={logado} variante="completo" />
           </div>
         </div>
         {!vaga.ativa && (
@@ -131,6 +133,11 @@ export default async function PaginaDaVaga({ params }: Props) {
               {publicacao && ` · publicada ${publicacao}`}. Os requisitos foram
               identificados automaticamente pelo texto do anúncio; confira os detalhes na vaga original.
             </p>
+          </div>
+        )}
+        {logado && vaga.origem !== "exemplo" && (
+          <div className="mt-5 rounded-xl bg-slate-50 p-4 ring-1 ring-inset ring-slate-100">
+            <EtapaDaVaga key={acompanhamento?.etapa ?? "nenhuma"} vagaId={vaga.id} etapaInicial={acompanhamento?.etapa ?? null} anotacaoInicial={acompanhamento?.anotacao} variante="completo" />
           </div>
         )}
       </header>

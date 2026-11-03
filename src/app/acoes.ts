@@ -11,6 +11,7 @@ import { enviarConfirmacao } from "@/lib/enviar-confirmacao";
 import { emailValidado } from "@/lib/seguranca";
 import { criarSessao, encerrarSessao, usuarioAtual } from "@/lib/sessao";
 import { ehNivel } from "@/lib/niveis";
+import { LIMITE_DA_ANOTACAO, ehEtapa } from "@/lib/candidaturas";
 import { MAX_ALERTAS_POR_PESSOA, gerarToken, nomeDoAlerta, temAlgumFiltro } from "@/lib/alertas";
 import { normalizar } from "@/lib/extrair-habilidades";
 import { SALARIOS_MINIMOS } from "@/lib/filtros-de-vagas";
@@ -136,6 +137,45 @@ export async function alternarVagaSalva(vagaId: number): Promise<ResultadoDeSalv
 
   revalidatePath("/salvas");
   return { salva: !jaSalva };
+}
+
+export type ResultadoDaEtapa = { ok: true; etapa: string } | { erro: string };
+
+/**
+ * Muda a etapa de uma vaga (candidatei, entrevista...). Se a vaga ainda não estava salva, ela é salva. Com etapa vazia,
+ * a vaga sai do acompanhamento (o mesmo que tirar a estrela).
+ */
+export async function mudarEtapaDaVaga(vagaId: number, etapa: string): Promise<ResultadoDaEtapa> {
+  const usuario = await usuarioAtual();
+  if (!usuario) return { erro: "Entre na sua conta para acompanhar vagas." };
+  if (!Number.isInteger(vagaId) || vagaId <= 0) return { erro: "Vaga não encontrada." };
+  if (etapa !== "" && !ehEtapa(etapa)) return { erro: "Etapa inválida." };
+  if (!(await db.vaga.findUnique({ where: { id: vagaId }, select: { id: true } }))) return { erro: "Vaga não encontrada." };
+
+  const chave = { usuarioId_vagaId: { usuarioId: usuario.id, vagaId } };
+  if (etapa === "") {
+    await db.vagaSalva.deleteMany({ where: { usuarioId: usuario.id, vagaId } });
+  } else {
+    await db.vagaSalva.upsert({
+      where: chave,
+      update: { etapa, etapaEm: new Date() },
+      create: { usuarioId: usuario.id, vagaId, etapa },
+    });
+  }
+  revalidatePath("/salvas");
+  return { ok: true, etapa };
+}
+
+/** Guarda a anotação da pessoa sobre uma vaga que ela acompanha (contato do recrutador, data da entrevista...). */
+export async function salvarAnotacaoDaVaga(vagaId: number, anotacao: string): Promise<{ ok: true } | { erro: string }> {
+  const usuario = await usuarioAtual();
+  if (!usuario) return { erro: "Entre na sua conta." };
+  if (!Number.isInteger(vagaId) || vagaId <= 0) return { erro: "Vaga não encontrada." };
+  const texto = String(anotacao ?? "").trim().slice(0, LIMITE_DA_ANOTACAO);
+  const r = await db.vagaSalva.updateMany({ where: { usuarioId: usuario.id, vagaId }, data: { anotacao: texto } });
+  if (r.count === 0) return { erro: "Salve a vaga antes de anotar." };
+  revalidatePath("/salvas");
+  return { ok: true };
 }
 
 const esquemaAlerta = z.object({

@@ -12,18 +12,17 @@ type Props = {
   percentual: number | null;
   salva: boolean;
   logado: boolean;
+  /** Algo que fica embaixo do cartão, fora do link (ex.: a etapa da candidatura). */
+  rodape?: React.ReactNode;
 };
 
-export function CartaoVaga({ vaga, percentual, salva, logado }: Props) {
+export function CartaoVaga({ vaga, percentual, salva, logado, rodape }: Props) {
   const publicacao = formatarPublicacao(vaga.publicadaEm);
   const salario = formatarSalario(vaga);
   return (
     // A estrela fica FORA do link (um botão dentro de um link é inválido e confunde teclado e leitores de tela).
-    <div className="group relative h-full">
-      <Link
-        href={`/vagas/${vaga.id}`}
-        className="cartao flex h-full flex-col p-5 transition duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-900/10"
-      >
+    <div className="cartao group relative flex h-full flex-col transition duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-900/10">
+      <Link href={`/vagas/${vaga.id}`} className="flex flex-1 flex-col rounded-2xl p-5">
         <div className="flex items-start gap-3 pr-10">
           <AvatarDaEmpresa empresa={vaga.empresa} />
           <div className="min-w-0">
@@ -69,6 +68,7 @@ export function CartaoVaga({ vaga, percentual, salva, logado }: Props) {
           <Etiqueta variante="fonte">{rotuloDaOrigem(vaga.origem)}</Etiqueta>
         </div>
       </Link>
+      {rodape}
       <BotaoSalvar vagaId={vaga.id} salvaInicial={salva} logado={logado} className="absolute right-3 top-3" />
     </div>
   );

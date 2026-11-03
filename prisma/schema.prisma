@@ -164,6 +164,10 @@ model VagaSalva {
   usuarioId Int
   vagaId    Int
   criadaEm  DateTime @default(now())
+  // Em que pé está a candidatura: "salva", "candidatei", "entrevista", "proposta", "contratado" ou "encerrada".
+  etapa     String   @default("salva")
+  etapaEm   DateTime @default(now())
+  anotacao  String   @default("")
 
   usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   vaga      Vaga    @relation(fields: [vagaId], references: [id], onDelete: Cascade)
