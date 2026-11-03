@@ -26,13 +26,13 @@ export function CartaoVaga({ vaga, percentual, salva, logado, rodape }: Props) {
         <div className="flex items-start gap-3 pr-10">
           <AvatarDaEmpresa empresa={vaga.empresa} />
           <div className="min-w-0">
-            <h3 className="font-semibold leading-snug text-slate-900 group-hover:text-indigo-700">{vaga.titulo}</h3>
+            <h2 className="font-semibold leading-snug text-slate-900 group-hover:text-indigo-700">{vaga.titulo}</h2>
             <p className="mt-0.5 text-sm text-slate-600">
               {vaga.empresa}
-              <span className="text-slate-400"> · </span>
+              <span aria-hidden="true" className="text-slate-400"> · </span>
               {rotuloDoLocal(vaga)}
             </p>
-            {publicacao && <p className="text-xs text-slate-400">{publicacao}</p>}
+            {publicacao && <p className="text-xs text-slate-500">{publicacao}</p>}
           </div>
         </div>
 

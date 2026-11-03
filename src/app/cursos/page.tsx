@@ -119,7 +119,7 @@ export default async function PaginaDeCursos({ searchParams }: { searchParams: P
       </p>
 
       <div className="mt-3 grid gap-4 md:grid-cols-2">
-        {pagina.itens.map((c) => <CartaoCurso key={c.id} curso={c} concluido={concluidos ? concluidos.has(c.id) : undefined} />)}
+        {pagina.itens.map((c) => <CartaoCurso key={c.id} curso={c} nivelDoTitulo={2} concluido={concluidos ? concluidos.has(c.id) : undefined} />)}
       </div>
       {pagina.total === 0 && (
         <p className="mt-8 text-center text-slate-500">

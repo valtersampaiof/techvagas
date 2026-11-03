@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { correspondeABusca, palavrasDaBusca, textoParaBusca } from "./busca";
 import { db } from "./db";
+import { memorizar, TEMPO_DA_MEMORIA_MS } from "./memoria";
 import { normalizar } from "./extrair-habilidades";
 import type { Requisito } from "./compatibilidade";
 import { contratosDoFiltro } from "./tipos-de-vaga";
@@ -172,7 +173,8 @@ function condicoesBasicas({ tipo, contrato, modalidade, area }: Pick<FiltrosDeVa
   ];
 }
 
-export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
+export function criarFonteDeVagas(banco: PrismaClient, opcoes: { memoriaMs?: number } = {}): FonteDeVagas {
+  const lembrar = memorizar<unknown>(opcoes.memoriaMs ?? 0);
   async function habilidadesPorId(): Promise<HabilidadesPorId> {
     const linhas = await banco.habilidade.findMany({ select: { id: true, slug: true, nome: true } });
     return new Map(linhas.map((h) => [h.id, { slug: h.slug, nome: h.nome }]));
@@ -234,14 +236,16 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
       return v ? converter(v, await habilidadesPorId(), true) : null;
     },
 
-    async areas() {
-      const linhas = await banco.vaga.findMany({
-        where: await filtroDeOrigem(),
-        select: { area: true },
-        distinct: ["area"],
-        orderBy: { area: "asc" },
-      });
-      return linhas.map((l) => l.area);
+    areas() {
+      return lembrar("areas", async () => {
+        const linhas = await banco.vaga.findMany({
+          where: await filtroDeOrigem(),
+          select: { area: true },
+          distinct: ["area"],
+          orderBy: { area: "asc" },
+        });
+        return linhas.map((l) => l.area);
+      }) as Promise<string[]>;
     },
 
     async habilidadesMaisPedidas(filtros) {
@@ -271,17 +275,19 @@ export function criarFonteDeVagas(banco: PrismaClient): FonteDeVagas {
       return ids.flatMap((id) => (porId.has(id) ? [porId.get(id)!] : []));
     },
 
-    async locais() {
-      const grupos = await banco.vaga.groupBy({
-        by: ["uf", "cidadeNome"],
-        where: { AND: [await filtroDeOrigem(), { OR: [{ uf: { not: "" } }, { cidadeNome: { not: "" } }] }] },
-        _count: { _all: true },
-      });
-      return grupos
-        .map((g) => ({ uf: g.uf, cidade: g.cidadeNome, vagas: g._count._all }))
-        .sort((a, b) => b.vagas - a.vagas || a.cidade.localeCompare(b.cidade, "pt-BR"));
+    locais() {
+      return lembrar("locais", async () => {
+        const grupos = await banco.vaga.groupBy({
+          by: ["uf", "cidadeNome"],
+          where: { AND: [await filtroDeOrigem(), { OR: [{ uf: { not: "" } }, { cidadeNome: { not: "" } }] }] },
+          _count: { _all: true },
+        });
+        return grupos
+          .map((g) => ({ uf: g.uf, cidade: g.cidadeNome, vagas: g._count._all }))
+          .sort((a, b) => b.vagas - a.vagas || a.cidade.localeCompare(b.cidade, "pt-BR"));
+      }) as Promise<LocalComVagas[]>;
     },
   };
 }
 
-export const fonteDeVagas: FonteDeVagas = criarFonteDeVagas(db);
+export const fonteDeVagas: FonteDeVagas = criarFonteDeVagas(db, { memoriaMs: TEMPO_DA_MEMORIA_MS });

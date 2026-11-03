@@ -86,6 +86,7 @@ export function EditorDePerfil({ catalogo, inicial, curso, cidade, acao }: Props
         <input
           type="file"
           accept="application/pdf"
+          aria-label="Enviar currículo em PDF"
           disabled={lendo}
           onChange={(e) => {
             void lerCurriculo(e.target.files?.[0]);

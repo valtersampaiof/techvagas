@@ -2,11 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { Cabecalho, Marca } from "@/components/Cabecalho";
+import { enderecoDoSite } from "@/lib/email";
+
+const DESCRICAO =
+  "Encontre vagas de tecnologia, do estágio ao sênior, em CLT e PJ, e veja quais cursos gratuitos e pagos fecham a distância entre você e a vaga.";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(enderecoDoSite()),
   title: { default: "TechVagas — vagas de TI e cursos para chegar até elas", template: "%s · TechVagas" },
-  description:
-    "Encontre vagas de tecnologia, do estágio ao sênior, em CLT e PJ, e veja quais cursos gratuitos e pagos fecham a distância entre você e a vaga.",
+  description: DESCRICAO,
+  openGraph: { type: "website", locale: "pt_BR", siteName: "TechVagas", title: "TechVagas — vagas de TI e cursos para chegar até elas", description: DESCRICAO },
+  twitter: { card: "summary_large_image", title: "TechVagas — vagas de TI e cursos para chegar até elas", description: DESCRICAO },
 };
 
 const linksDoRodape = [

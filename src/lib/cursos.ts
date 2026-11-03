@@ -1,7 +1,15 @@
 import { db } from "./db";
+import { memorizar, TEMPO_DA_MEMORIA_MS } from "./memoria";
 import type { CursoCandidato } from "./compatibilidade";
 
-export async function listarCursosCandidatos(): Promise<CursoCandidato[]> {
+const lembrar = memorizar<CursoCandidato[]>(TEMPO_DA_MEMORIA_MS);
+
+/** O catálogo quase não muda (só quando o atualizador roda), então fica guardado por alguns minutos na internet. */
+export function listarCursosCandidatos(): Promise<CursoCandidato[]> {
+  return lembrar("catalogo", lerCatalogo);
+}
+
+async function lerCatalogo(): Promise<CursoCandidato[]> {
   const cursos = await db.curso.findMany({
     include: { habilidades: { include: { habilidade: { select: { slug: true } } } } },
     orderBy: { id: "asc" },

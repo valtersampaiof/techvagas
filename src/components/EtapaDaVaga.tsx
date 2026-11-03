@@ -78,7 +78,7 @@ export function EtapaDaVaga({ vagaId, etapaInicial, anotacaoInicial = "", varian
           />
           <div className="mt-2 flex items-center gap-3">
             <button type="button" onClick={guardarAnotacao} disabled={pendente} className="btn-secundario !py-1.5">Salvar anotação</button>
-            <span className="text-xs text-slate-400">{anotacao.length}/{LIMITE_DA_ANOTACAO}</span>
+            <span className="text-xs text-slate-500">{anotacao.length}/{LIMITE_DA_ANOTACAO}</span>
           </div>
         </details>
       )}

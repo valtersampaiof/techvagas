@@ -98,16 +98,16 @@ export default async function Inicio() {
               <div className="mt-4">
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <span className="text-amber-700">67% compatível</span>
-                  <span className="text-slate-400">2 de 3 requisitos</span>
+                  <span className="text-slate-500">2 de 3 requisitos</span>
                 </div>
                 <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-amber-400 to-emerald-500" />
                 </div>
               </div>
               <ul className="mt-4 space-y-1.5 text-sm">
-                <li className="flex items-center gap-2"><span className="text-emerald-600">✔</span> Redes <span className="text-slate-400">você tem</span></li>
-                <li className="flex items-center gap-2"><span className="text-emerald-600">✔</span> Linux <span className="text-slate-400">você tem</span></li>
-                <li className="flex items-center gap-2"><span className="text-rose-600">✘</span> Segurança da Informação <span className="text-rose-500">falta</span></li>
+                <li className="flex items-center gap-2"><span className="text-emerald-600">✔</span> Redes <span className="text-slate-500">você tem</span></li>
+                <li className="flex items-center gap-2"><span className="text-emerald-600">✔</span> Linux <span className="text-slate-500">você tem</span></li>
+                <li className="flex items-center gap-2"><span className="text-rose-600">✘</span> Segurança da Informação <span className="text-rose-700">falta</span></li>
               </ul>
               <div className="mt-4 rounded-xl bg-indigo-50 p-3 text-xs text-indigo-900">
                 <p className="font-semibold">Para fechar essa lacuna:</p>

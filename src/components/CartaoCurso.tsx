@@ -8,9 +8,12 @@ type Props = {
   destaque?: string;
   /** Só quando há alguém logado: mostra o botão "marcar como concluído". undefined = sem botão. */
   concluido?: boolean;
+  /** Nível do título (h2 ou h3): o título não pode pular nível em relação ao que vem antes na página. */
+  nivelDoTitulo?: 2 | 3;
 };
 
-export function CartaoCurso({ curso, destaque, concluido }: Props) {
+export function CartaoCurso({ curso, destaque, concluido, nivelDoTitulo = 3 }: Props) {
+  const Titulo = `h${nivelDoTitulo}` as "h2" | "h3";
   return (
     <article
       className="cartao relative flex h-full flex-col overflow-hidden p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-900/10"
@@ -21,7 +24,7 @@ export function CartaoCurso({ curso, destaque, concluido }: Props) {
       />
       {destaque && <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-indigo-600">{destaque}</p>}
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-semibold leading-snug text-slate-900">{curso.titulo}</h3>
+        <Titulo className="font-semibold leading-snug text-slate-900">{curso.titulo}</Titulo>
         <span
           className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
             curso.gratuito ? "bg-emerald-100 text-emerald-800" : "bg-violet-100 text-violet-800"
